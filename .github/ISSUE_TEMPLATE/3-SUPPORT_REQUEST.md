@@ -1,5 +1,5 @@
 ---
-name: "\U00012753 Support Request"
+name: "\U00002753 Support Request"
 about: "If you have a question \U0001F4AC, please check out our Slack or StackOverflow!"
 title: ''
 labels: 'i: state:unsupported'
