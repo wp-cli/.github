@@ -9,7 +9,7 @@ assignees: ''
 
 ## Feature Request
 
-#### ⚠️ Before you describe your requested feature...
+<!--- ⚠️ Before you describe your requested feature... ---
 
 **Is your feature request directly related to a specific, existing command?**
 
@@ -49,7 +49,7 @@ If you are not in the correct repository right now, you can just close this issu
 
 If yes, head over to the [`wp-cli/ideas`](https://github.com/wp-cli/ideas) repository and [create a new issue in that repository](https://github.com/wp-cli/ideas/issues/new).
 
-#### ✅ If you are in the correct location now... 
+--- ✅ If you are in the correct location now... ---> 
 
 - [ ] Yes, I reviewed the [contribution guidelines](https://make.wordpress.org/cli/handbook/contributing/).
 

@@ -9,7 +9,7 @@ assignees: ''
 
 ## Bug Report
 
-#### ⚠️ Before you start reporting the bug...
+<!--- ⚠️ Before you start reporting the bug... ---
 
 **Is your bug report directly related to a specific command?**
 
@@ -49,7 +49,7 @@ If you are not in the correct repository right now, you can just close this issu
 
 Just head over to the [`wp-cli/wp-cli`](https://github.com/wp-cli/wp-cli) repository and [create a new issue in that repository](https://github.com/wp-cli/wp-cli/issues/new). The maintainers can still move the bug report into the correct repository later on.
 
-#### ✅ If you are in the correct location now...
+--- ✅ If you are in the correct location now... --->
 
 - [ ] Yes, I reviewed the [contribution guidelines](https://make.wordpress.org/cli/handbook/contributing/).
 - [ ] Yes, more specifically, I reviewed the guidelines on [how to write clear bg reports](https://make.wordpress.org/cli/handbook/bug-reports/).
