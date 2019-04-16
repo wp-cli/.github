@@ -1,6 +1,6 @@
 ---
 name: "\U00002753 Support Request"
-about: "If you have a question \U0001F4AC, please check out our Slack or StackOverflow!"
+about: "I have a question about how to use WP-CLI"
 title: ''
 labels: 'i: state:unsupported'
 assignees: ''
