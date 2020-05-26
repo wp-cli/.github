@@ -1,13 +1,15 @@
 name: Sync GitHub Actions workflows
+
 on:
   push:
     branches:
       - master
   schedule:
-    - cron:  '0 0 * * *'
+    - cron:  '0 0 * * *' # Run every day at midnight UTC.
 
 jobs:
-  sync:
+
+  sync: #-----------------------------------------------------------------------
     name: sync-workflows
     runs-on: ubuntu-latest
     steps:
