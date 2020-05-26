@@ -1,0 +1,32 @@
+name: PHPCS check
+
+on: pull_request
+
+jobs:
+  phpcs:
+    name: PHPCS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+      - name: Check required files' existence
+        id: check_files
+        uses: andstor/file-existence-action@v1
+        with:
+          files: "composer.json, phpcs.xml.dist"
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: |
+          echo "::set-output name=dir::$(composer config cache-files-dir)"
+      - uses: actions/cache@v1
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+      - name: Install dependencies
+        if: steps.check_files.outputs.files_exists == 'true'
+        run: composer install --dev --prefer-dist --no-progress --no-suggest
+      - name: Run PHPCS
+        if: steps.check_files.outputs.files_exists == 'true'
+        run: vendor/bin/phpcs -q --report=checkstyle | cs2pr --graceful-warnings
