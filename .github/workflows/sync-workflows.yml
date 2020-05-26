@@ -1,6 +1,8 @@
 name: Sync GitHub Actions workflows
 on:
-  push
+  push:
+    branches:
+      - master
   schedule:
     - cron:  '0 0 * * *'
 
