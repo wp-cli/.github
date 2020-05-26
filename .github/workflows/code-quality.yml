@@ -14,6 +14,11 @@ jobs:
         uses: andstor/file-existence-action@v1
         with:
           files: "composer.json"
+      - name: Set up PHP envirnoment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          tools: cs2pr
       - name: Get Composer cache Directory
         if: steps.check_composer_file.outputs.files_exists == 'true'
         id: composer-cache
@@ -23,13 +28,13 @@ jobs:
         if: steps.check_composer_file.outputs.files_exists == 'true'
         uses: actions/cache@v1
         with:
-          path: ${{ steps.composer-cache.outputs.dir }}
+          path: ${{ steps['composer-cache'].outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: |
             ${{ runner.os }}-composer-
       - name: Install dependencies
         if: steps.check_composer_file.outputs.files_exists == 'true'
-        run: composer install --dev --prefer-dist --no-progress --no-suggest
+        run: COMPOSER_ROOT_VERSION=dev-master composer install --prefer-dist --no-progress --no-suggest
       - name: Check existence of vendor/bin/parallel-lint file
         id: check_linter_file
         uses: andstor/file-existence-action@v1
@@ -37,7 +42,7 @@ jobs:
           files: "vendor/bin/parallel-lint"
       - name: Run Linter
         if: steps.check_linter_file.outputs.files_exists == 'true'
-        run: vendor/bin/parallel-lint -j 10 . --exclude vendor --checkstyle | cs2pr --graceful-warnings
+        run: vendor/bin/parallel-lint -j 10 . --exclude vendor --checkstyle | cs2pr
 
   phpcs:
     name: PHPCS
@@ -50,6 +55,11 @@ jobs:
         uses: andstor/file-existence-action@v1
         with:
           files: "composer.json, phpcs.xml.dist"
+      - name: Set up PHP envirnoment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          tools: cs2pr
       - name: Get Composer cache Directory
         if: steps.check_files.outputs.files_exists == 'true'
         id: composer-cache
@@ -65,12 +75,12 @@ jobs:
             ${{ runner.os }}-composer-
       - name: Install dependencies
         if: steps.check_files.outputs.files_exists == 'true'
-        run: composer install --dev --prefer-dist --no-progress --no-suggest
+        run: COMPOSER_ROOT_VERSION=dev-master composer install --prefer-dist --no-progress --no-suggest
       - name: Check existence of vendor/bin/phpcs file
         id: check_phpcs_binary_file
         uses: andstor/file-existence-action@v1
         with:
-          files: "vendor/bin/parallel-lint"
+          files: "vendor/bin/phpcs"
       - name: Run PHPCS
         if: steps.check_phpcs_binary_file.outputs.files_exists == 'true'
-        run: vendor/bin/phpcs -q --report=checkstyle | cs2pr --graceful-warnings
+        run: vendor/bin/phpcs -q --report=checkstyle | cs2pr
