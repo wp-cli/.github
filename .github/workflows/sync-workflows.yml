@@ -6,49 +6,50 @@ jobs:
     name: sync-workflows
     runs-on: ubuntu-latest
     steps:
-      uses: adrianjost/files-sync-action@v1.0.1
-      with:
-        FILE_PATTERNS: |
-          ^.github/workflows/code-quality.yml
-        TARGET_REPOS: |
-          wp-cli/admin-command
-          wp-cli/cache-command
-          wp-cli/checksum-command
-          wp-cli/config-command
-          wp-cli/core-command
-          wp-cli/cron-command
-          wp-cli/db-command
-          wp-cli/dist-archive-command
-          wp-cli/doctor-command
-          wp-cli/embed-command
-          wp-cli/entity-command
-          wp-cli/eval-command
-          wp-cli/export-command
-          wp-cli/extension-command
-          wp-cli/find-command
-          wp-cli/i18n-command
-          wp-cli/import-command
-          wp-cli/language-command
-          wp-cli/maintenance-mode-command
-          wp-cli/media-command
-          wp-cli/package-command
-          wp-cli/profile-command
-          wp-cli/restful
-          wp-cli/rewrite-command
-          wp-cli/role-command
-          wp-cli/scaffold-command
-          wp-cli/scaffold-package-command
-          wp-cli/search-replace-command
-          wp-cli/server-command
-          wp-cli/shell-command
-          wp-cli/snapshot-command
-          wp-cli/super-admin-command
-          wp-cli/widget-command
-          wp-cli/wp-cli
-          wp-cli/wp-cli-bundle
-          wp-cli/wp-cli-dev
-          wp-cli/wp-cli-tests
-          wp-cli/wp-cli.github.com
-          wp-cli/wp-config-transformer
-          wp-cli/wp-super-cache-cli
-        GITHUB_TOKEN: ${{ secrets.ACTIONS_BOT }}
+      - name: Sync files
+        uses: adrianjost/files-sync-action@v1.0.1
+        with:
+          FILE_PATTERNS: |
+            ^.github/workflows/code-quality.yml
+          TARGET_REPOS: |
+            wp-cli/admin-command
+            wp-cli/cache-command
+            wp-cli/checksum-command
+            wp-cli/config-command
+            wp-cli/core-command
+            wp-cli/cron-command
+            wp-cli/db-command
+            wp-cli/dist-archive-command
+            wp-cli/doctor-command
+            wp-cli/embed-command
+            wp-cli/entity-command
+            wp-cli/eval-command
+            wp-cli/export-command
+            wp-cli/extension-command
+            wp-cli/find-command
+            wp-cli/i18n-command
+            wp-cli/import-command
+            wp-cli/language-command
+            wp-cli/maintenance-mode-command
+            wp-cli/media-command
+            wp-cli/package-command
+            wp-cli/profile-command
+            wp-cli/restful
+            wp-cli/rewrite-command
+            wp-cli/role-command
+            wp-cli/scaffold-command
+            wp-cli/scaffold-package-command
+            wp-cli/search-replace-command
+            wp-cli/server-command
+            wp-cli/shell-command
+            wp-cli/snapshot-command
+            wp-cli/super-admin-command
+            wp-cli/widget-command
+            wp-cli/wp-cli
+            wp-cli/wp-cli-bundle
+            wp-cli/wp-cli-dev
+            wp-cli/wp-cli-tests
+            wp-cli/wp-cli.github.com
+            wp-cli/wp-config-transformer
+            wp-cli/wp-super-cache-cli
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_BOT }}
