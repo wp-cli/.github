@@ -87,6 +87,7 @@ jobs:
             wp-cli/import-command
             wp-cli/language-command
             wp-cli/maintenance-mode-command
+            wp-cli/media-command
             wp-cli/package-command
             wp-cli/rewrite-command
             wp-cli/role-command
