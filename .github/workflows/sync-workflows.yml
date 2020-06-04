@@ -9,8 +9,8 @@ on:
 
 jobs:
 
-  sync: #-----------------------------------------------------------------------
-    name: sync-workflows
+  sync-workflows: #-----------------------------------------------------------------------
+    name: Sync GitHub Actions workflows
     runs-on: ubuntu-latest
     steps:
       - name: Sync files
@@ -60,4 +60,40 @@ jobs:
             wp-cli/wp-cli.github.com
             wp-cli/wp-config-transformer
             wp-cli/wp-super-cache-cli
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_BOT }}
+
+  sync-travis: #-----------------------------------------------------------------------
+    name: Sync Travis CI configuration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync files
+        uses: adrianjost/files-sync-action@v1.0.1
+        with:
+          FILE_PATTERNS: |
+            ^.travis.yml
+          TARGET_REPOS: |
+            wp-cli/cache-command
+            wp-cli/checksum-command
+            wp-cli/config-command
+            wp-cli/core-command
+            wp-cli/cron-command
+            wp-cli/db-command
+            wp-cli/embed-command
+            wp-cli/entity-command
+            wp-cli/eval-command
+            wp-cli/export-command
+            wp-cli/extension-command
+            wp-cli/i18n-command
+            wp-cli/import-command
+            wp-cli/language-command
+            wp-cli/maintenance-mode-command
+            wp-cli/package-command
+            wp-cli/rewrite-command
+            wp-cli/role-command
+            wp-cli/scaffold-command
+            wp-cli/search-replace-command
+            wp-cli/server-command
+            wp-cli/shell-command
+            wp-cli/super-admin-command
+            wp-cli/widget-command
           GITHUB_TOKEN: ${{ secrets.ACTIONS_BOT }}
