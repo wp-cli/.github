@@ -105,7 +105,6 @@ jobs:
             wp-cli/super-admin-command
             wp-cli/widget-command
             wp-cli/wp-cli
-            wp-cli/wp-cli-tests
           GITHUB_TOKEN: ${{ secrets.ACTIONS_BOT }}
 
   sync-dependabot: #------------------------------------------------------------
