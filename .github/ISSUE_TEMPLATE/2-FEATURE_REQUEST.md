@@ -1,9 +1,9 @@
 ---
 name: "\U0001F195 Feature Request"
-about: "I have a suggestion for missing functionality or improvements"
+about: I have a suggestion for missing functionality or improvements
 title: ''
-labels: 'i: enhancement'
-assignees: ''
+labels: documentation, good first issue, mellbabe
+assignees: Mellbabe
 
 ---
 
