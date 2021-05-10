@@ -1,6 +1,7 @@
 name: Sync GitHub Actions workflows
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
