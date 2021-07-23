@@ -21,6 +21,7 @@ jobs:
             ^.actrc
             ^.github/workflows/code-quality.yml
             ^.github/workflows/regenerate-readme.yml
+            ^.github/workflows/testing.yml
           TARGET_REPOS: |
             wp-cli/admin-command
             wp-cli/cache-command
