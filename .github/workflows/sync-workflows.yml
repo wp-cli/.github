@@ -13,6 +13,7 @@ jobs:
   sync-workflows: #-------------------------------------------------------------
     name: Sync GitHub Actions workflows
     runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'wp-cli' }}
     steps:
       - name: Sync files
         uses: adrianjost/files-sync-action@v1.5.0
@@ -67,6 +68,7 @@ jobs:
   sync-dependabot: #------------------------------------------------------------
     name: Sync Dependabot configuration
     runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'wp-cli' }}
     steps:
       - name: Sync files
         uses: adrianjost/files-sync-action@v1.5.0
