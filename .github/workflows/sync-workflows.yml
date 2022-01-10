@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
+      - main
       - master
   schedule:
     - cron:  '0 */2 * * *' # Run every 2 hours.
