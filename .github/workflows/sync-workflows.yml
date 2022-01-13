@@ -7,7 +7,7 @@ on:
       - main
       - master
   schedule:
-    - cron:  '0 */2 * * *' # Run every 2 hours.
+    - cron:  '*/10 * * * *' # Run every 10 minutes.
 
 jobs:
 
