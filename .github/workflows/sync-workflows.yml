@@ -46,6 +46,7 @@ jobs:
             wp-cli/maintenance-mode-command
             wp-cli/media-command
             wp-cli/package-command
+            wp-cli/php-cli-tools
             wp-cli/profile-command
             wp-cli/restful
             wp-cli/rewrite-command
