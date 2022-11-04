@@ -1,14 +1,7 @@
 name: Regenerate README file
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-      - master
-    paths-ignore:
-      - 'features/**'
-      - 'README.md'
+  workflow_call:
 
 # Cancels all previous workflow runs for the same branch that have not yet completed.
 concurrency:
