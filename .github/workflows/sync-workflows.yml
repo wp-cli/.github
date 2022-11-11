@@ -60,6 +60,7 @@ jobs:
             wp-cli/super-admin-command
             wp-cli/widget-command
             wp-cli/wp-cli
+            wp-cli/wp-cli-bundle
             wp-cli/wp-cli-dev
             wp-cli/wp-cli-tests
             wp-cli/wp-cli.github.com
