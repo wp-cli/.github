@@ -44,6 +44,9 @@ jobs:
         uses: "ramsey/composer-install@v2"
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
+        with:
+          # Bust the cache at least once a month - output format: YYYY-MM-DD.
+          custom-cache-suffix: $(date -u -d "-0 month -$(($(date +%d)-1)) days" "+%F")
 
       - name: Setup problem matcher to provide annotations for PHPUnit
         if: steps.check_files.outputs.files_exists == 'true'
@@ -135,6 +138,9 @@ jobs:
         uses: "ramsey/composer-install@v2"
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
+        with:
+          # Bust the cache at least once a month - output format: YYYY-MM-DD.
+          custom-cache-suffix: $(date -u -d "-0 month -$(($(date +%d)-1)) days" "+%F")
 
       - name: Start MySQL server
         if: steps.check_files.outputs.files_exists == 'true'
