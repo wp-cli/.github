@@ -45,8 +45,8 @@ jobs:
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
         with:
-          # Bust the cache at least once a month - output format: YYYY-MM-DD.
-          custom-cache-suffix: $(date -u -d "-0 month -$(($(date +%d)-1)) days" "+%F")
+          # Bust the cache at least once a month - output format: YYYY-MM.
+          custom-cache-suffix: $(date -u "+%Y-%m")
 
       - name: Setup problem matcher to provide annotations for PHPUnit
         if: steps.check_files.outputs.files_exists == 'true'
@@ -139,8 +139,8 @@ jobs:
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
         with:
-          # Bust the cache at least once a month - output format: YYYY-MM-DD.
-          custom-cache-suffix: $(date -u -d "-0 month -$(($(date +%d)-1)) days" "+%F")
+          # Bust the cache at least once a month - output format: YYYY-MM.
+          custom-cache-suffix: $(date -u "+%Y-%m")
 
       - name: Start MySQL server
         if: steps.check_files.outputs.files_exists == 'true'
