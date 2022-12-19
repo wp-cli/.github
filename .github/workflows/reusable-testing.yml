@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['5.6', '7.0', '7.1', '7.2', '7.3', '7.4', '8.0', '8.1']
+        php: ['5.6', '7.0', '7.1', '7.2', '7.3', '7.4', '8.0', '8.1', '8.2']
     runs-on: ubuntu-20.04
 
     steps:
@@ -54,6 +54,7 @@ jobs:
 
       - name: Run PHPUnit
         if: steps.check_files.outputs.files_exists == 'true'
+        continue-on-error: ${{ matrix.php == '8.2' }}
         run: composer phpunit
 
   functional: #----------------------------------------------------------------------
@@ -61,7 +62,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['5.6', '7.0', '7.1', '7.2', '7.3', '7.4', '8.0', '8.1']
+        php: ['5.6', '7.0', '7.1', '7.2', '7.3', '7.4', '8.0', '8.1', '8.2']
         wp: ['latest']
         mysql: ['8.0']
         include:
@@ -86,6 +87,9 @@ jobs:
           - php: '8.0'
             wp: 'trunk'
             mysql: '5.6'
+          - php: '8.1'
+            wp: 'trunk'
+            mysql: '8.0'
           - php: '8.1'
             wp: 'trunk'
             mysql: '8.0'
@@ -170,6 +174,7 @@ jobs:
 
       - name: Run Behat
         if: steps.check_files.outputs.files_exists == 'true'
+        continue-on-error: ${{ matrix.php == '8.2' }}
         env:
           WP_VERSION: '${{ matrix.wp }}'
         run: composer behat || composer behat-rerun
