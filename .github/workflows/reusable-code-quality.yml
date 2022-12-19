@@ -39,8 +39,8 @@ jobs:
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
         with:
-          # Bust the cache at least once a month - output format: YYYY-MM-DD.
-          custom-cache-suffix: $(date -u -d "-0 month -$(($(date +%d)-1)) days" "+%F")
+          # Bust the cache at least once a month - output format: YYYY-MM.
+          custom-cache-suffix: $(date -u "+%Y-%m")
 
       - name: Check existence of vendor/bin/parallel-lint file
         id: check_linter_file
@@ -81,8 +81,8 @@ jobs:
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
         with:
-          # Bust the cache at least once a month - output format: YYYY-MM-DD.
-          custom-cache-suffix: $(date -u -d "-0 month -$(($(date +%d)-1)) days" "+%F")
+          # Bust the cache at least once a month - output format: YYYY-MM.
+          custom-cache-suffix: $(date -u "+%Y-%m")
 
       - name: Check existence of vendor/bin/phpcs file
         id: check_phpcs_binary_file
