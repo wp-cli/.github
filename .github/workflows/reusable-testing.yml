@@ -90,7 +90,7 @@ jobs:
           - php: '8.1'
             wp: 'trunk'
             mysql: '8.0'
-          - php: '8.1'
+          - php: '8.2'
             wp: 'trunk'
             mysql: '8.0'
           - php: '5.6'
