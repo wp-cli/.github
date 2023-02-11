@@ -11,7 +11,7 @@ on:
 
 jobs:
 
-  sync-workflows: #-------------------------------------------------------------
+  sync-workflows:
     name: Sync GitHub Actions workflows
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'wp-cli' }}
@@ -68,7 +68,7 @@ jobs:
             wp-cli/wp-super-cache-cli
           GITHUB_TOKEN: ${{ secrets.ACTIONS_BOT }}
 
-  sync-dependabot: #------------------------------------------------------------
+  sync-dependabot:
     name: Sync Dependabot configuration
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'wp-cli' }}
