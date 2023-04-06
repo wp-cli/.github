@@ -65,7 +65,6 @@ jobs:
 
       - name: Run PHPUnit
         if: steps.check_files.outputs.files_exists == 'true'
-        continue-on-error: ${{ matrix.php == '8.2' }}
         run: composer phpunit
 
   functional: #----------------------------------------------------------------------
@@ -185,7 +184,6 @@ jobs:
 
       - name: Run Behat
         if: steps.check_files.outputs.files_exists == 'true'
-        continue-on-error: ${{ matrix.php == '8.2' }}
         env:
           WP_VERSION: '${{ matrix.wp }}'
         run: composer behat || composer behat-rerun
