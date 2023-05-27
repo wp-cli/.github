@@ -21,6 +21,7 @@ jobs:
         with:
           FILE_PATTERNS: |
             ^.actrc
+            ^.editorconfig
             ^.github/workflows/code-quality.yml
             ^.github/workflows/regenerate-readme.yml
             ^.github/workflows/testing.yml
