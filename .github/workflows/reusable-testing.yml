@@ -106,6 +106,9 @@ jobs:
           - php: '5.6'
             wp: '3.7'
             mysql: '5.6'
+          - php: '5.6'
+            wp: '6.2'
+            mysql: '8.0'
     runs-on: ubuntu-20.04
 
     services:
