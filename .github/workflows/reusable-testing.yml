@@ -16,8 +16,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['5.6', '7.0', '7.1', '7.2', '7.3', '7.4', '8.0', '8.1', '8.2']
+        php: ['5.6', '7.0', '7.1', '7.2', '7.3', '7.4', '8.0', '8.1', '8.2', '8.3']
     runs-on: ubuntu-20.04
+
+    continue-on-error: ${{ matrix.php == '8.3' }}
 
     steps:
       - name: Check out source code
@@ -109,7 +111,12 @@ jobs:
           - php: '5.6'
             wp: '6.2'
             mysql: '8.0'
+          - php: '8.3'
+            wp: 'trunk'
+            mysql: '8.0'
     runs-on: ubuntu-20.04
+
+    continue-on-error: ${{ matrix.php == '8.3' }}
 
     services:
       mysql:
