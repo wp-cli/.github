@@ -57,7 +57,6 @@ jobs:
             wp-cli/search-replace-command
             wp-cli/server-command
             wp-cli/shell-command
-            wp-cli/snapshot-command
             wp-cli/super-admin-command
             wp-cli/widget-command
             wp-cli/wp-cli
