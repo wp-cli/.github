@@ -18,7 +18,7 @@ jobs:
     if: ${{ github.repository_owner == 'wp-cli' && ! contains(fromJson('[".github", "wp-cli", "wp-cli-bundle", "wp-super-cache-cli", "php-cli-tools", "wp-config-transformer", "wp-cli.github.com"]'), github.event.repository.name) }}
     steps:
       - name: Check out source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up PHP environment
         uses: shivammathur/setup-php@v2

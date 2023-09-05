@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check existence of composer.json file
         id: check_files
@@ -127,7 +127,7 @@ jobs:
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check existence of composer.json & behat.yml files
         id: check_files
