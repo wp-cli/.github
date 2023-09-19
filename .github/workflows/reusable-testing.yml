@@ -5,6 +5,7 @@ on:
     inputs:
       minimum-php:
         description: 'Minimum PHP version to test against.'
+        type: string
         required: false
         default: '5.6'
 
