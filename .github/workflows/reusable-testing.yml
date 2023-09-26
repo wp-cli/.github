@@ -45,7 +45,7 @@ jobs:
           echo "COMPOSER_PHP_VERSION=$(jq '.require.php' composer.json | sed 's/[^0-9.|]//g' | jq -Rc 'split("|") | min | tonumber')" >> $GITHUB_OUTPUT;
 
       - name: Exit early if matrix PHP version lower than composer.json required PHP version
-        run: if [[ $(bc -l <<< "$COMPOSER_PHP_VERSION > $MATRIX_PHP_VERSION") -eq 1 ]]; then exit -1; fi
+        run: if [[ $(bc -l <<< "$COMPOSER_PHP_VERSION > $MATRIX_PHP_VERSION") -eq 1 ]]; then exit 1; fi
         env:
           COMPOSER_PHP_VERSION: ${{ steps.parse-composer.outputs.COMPOSER_PHP_VERSION }}
           MATRIX_PHP_VERSION: ${{ matrix.php }}
