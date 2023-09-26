@@ -39,6 +39,17 @@ jobs:
         with:
           files: "composer.json, phpunit.xml.dist"
 
+      - name: Get composer.json PHP version
+        id: parse-composer
+        run: |
+          echo "COMPOSER_PHP_VERSION=$(jq '.require.php' composer.json | sed 's/[^0-9.|]//g' | jq -Rc 'split("|") | min | tonumber')" >> $GITHUB_OUTPUT;
+
+      - name: Exit early if matrix PHP version lower than composer.json required PHP version
+        run: if [[ $(bc -l <<< "$COMPOSER_PHP_VERSION > $MATRIX_PHP_VERSION") -eq 1 ]]; then exit -1; fi
+        env:
+          COMPOSER_PHP_VERSION: ${{ steps.parse-composer.outputs.COMPOSER_PHP_VERSION }}
+          MATRIX_PHP_VERSION: ${{ matrix.php }}
+
       - name: Set up PHP environment (PHP 5.6 - 7.1)
         if: ${{ matrix.php >= inputs.minimum-php && matrix.php < '7.2' && steps.check_files.outputs.files_exists == 'true'}}
         uses: shivammathur/setup-php@v2
