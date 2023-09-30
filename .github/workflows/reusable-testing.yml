@@ -3,11 +3,6 @@ name: Testing
 on:
   workflow_call:
     inputs:
-      minimum-php:
-        description: 'Minimum PHP version to test against.'
-        type: string
-        required: false
-        default: '5.6'
       matrix-php-versions-unit:
         description: 'JSON string array of PHP versions to use in unit test matrix.'
         type: string
