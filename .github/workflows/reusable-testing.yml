@@ -29,7 +29,6 @@ jobs:
 
     steps:
       - name: Check out source code
-        if: ${{ matrix.php >= inputs.minimum-php }}
         uses: actions/checkout@v4
 
       - name: Check existence of composer.json file
