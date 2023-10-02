@@ -33,7 +33,6 @@ jobs:
             wp-cli/core-command
             wp-cli/cron-command
             wp-cli/db-command
-            wp-cli/dist-archive-command
             wp-cli/doctor-command
             wp-cli/embed-command
             wp-cli/entity-command
@@ -66,6 +65,19 @@ jobs:
             wp-cli/wp-cli.github.com
             wp-cli/wp-config-transformer
             wp-cli/wp-super-cache-cli
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_BOT }}
+
+      # Where repos call `reusable-testing.yml` with PHP versions specified, we do not want to overwrite `testing.yml`.
+      - name: Sync files except `testing.yml`
+        uses: adrianjost/files-sync-action@v2.0.4
+        with:
+          FILE_PATTERNS: |
+            ^.actrc
+            ^.editorconfig
+            ^.github/workflows/code-quality.yml
+            ^.github/workflows/regenerate-readme.yml
+          TARGET_REPOS: |
+            wp-cli/dist-archive-command
           GITHUB_TOKEN: ${{ secrets.ACTIONS_BOT }}
 
   sync-dependabot: #------------------------------------------------------------
