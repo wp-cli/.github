@@ -85,6 +85,7 @@ jobs:
         php: ['7.0', '7.1', '7.2', '7.3', '7.4', '8.0', '8.1', '8.2']
         wp: ['latest']
         mysql: ['8.0']
+        dbtype: ['mysql', 'sqlite']
         include:
           - php: '7.0'
             wp: 'trunk'
@@ -122,13 +123,17 @@ jobs:
           - php: '8.3'
             wp: 'trunk'
             mysql: '8.0'
+          - php: '8.2'
+            wp: 'trunk'
+            dbtype: 'sqlite'
     runs-on: ubuntu-20.04
 
-    continue-on-error: ${{ matrix.php == '8.3' }}
+    continue-on-error: ${{ matrix.php == '8.3' || matrix.dbtype == 'sqlite' }}
 
     services:
       mysql:
-        image: mysql:${{ matrix.mysql }}
+        # Workaround to not start MySQL service if not needed.
+        image: ${{ matrix.dbtype !== 'sqlite' && format('mysql:{0}', matrix.mysql) || '' }}
         ports:
           - 3306
         options: --health-cmd="mysqladmin ping" --health-interval=30s --health-timeout=10s --health-retries=5 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=wp_cli_test --entrypoint sh mysql:${{ matrix.mysql }} -c "exec docker-entrypoint.sh mysqld --default-authentication-plugin=mysql_native_password"
@@ -177,11 +182,11 @@ jobs:
           custom-cache-suffix: $(date -u "+%Y-%m")
 
       - name: Start MySQL server
-        if: ${{ matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
+        if: ${{ matrix.dbtype !== 'sqlite' && matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
         run: sudo systemctl start mysql
 
       - name: Configure DB environment
-        if: ${{ matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
+        if: ${{ matrix.dbtype !== 'sqlite' && matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
         run: |
           echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
           echo "MYSQL_TCP_PORT=${{ job.services.mysql.ports['3306'] }}" >> $GITHUB_ENV
@@ -193,17 +198,19 @@ jobs:
           echo "WP_CLI_TEST_DBHOST=127.0.0.1:${{ job.services.mysql.ports['3306'] }}" >> $GITHUB_ENV
 
       - name: Prepare test database
-        if: ${{ matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
+        if: ${{ matrix.dbtype !== 'sqlite' && matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
         run: composer prepare-tests
 
       - name: Check Behat environment
         if: ${{ matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
         env:
           WP_VERSION: '${{ matrix.wp }}'
+          DB_TYPE: ${{ matrix.dbtype }} || 'mysql'
         run: WP_CLI_TEST_DEBUG_BEHAT_ENV=1 composer behat
 
       - name: Run Behat
         if: ${{ matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
         env:
           WP_VERSION: '${{ matrix.wp }}'
+          DB_TYPE: ${{ matrix.dbtype }} || 'mysql'
         run: composer behat || composer behat-rerun
