@@ -78,7 +78,7 @@ jobs:
         run: composer phpunit
 
   functional: #----------------------------------------------------------------------
-    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with MySQL ${{ matrix.mysql }}
+    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && format('MySQL {0}', matrix.mysql) || 'SQLite' }}
     strategy:
       fail-fast: false
       matrix:
