@@ -182,11 +182,11 @@ jobs:
           custom-cache-suffix: $(date -u "+%Y-%m")
 
       - name: Start MySQL server
-        if: ${{ matrix.dbtype !== 'sqlite' && matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
+        if: ${{ matrix.dbtype != 'sqlite' && matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
         run: sudo systemctl start mysql
 
       - name: Configure DB environment
-        if: ${{ matrix.dbtype !== 'sqlite' && matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
+        if: ${{ matrix.dbtype != 'sqlite' && matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
         run: |
           echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
           echo "MYSQL_TCP_PORT=${{ job.services.mysql.ports['3306'] }}" >> $GITHUB_ENV
@@ -198,7 +198,7 @@ jobs:
           echo "WP_CLI_TEST_DBHOST=127.0.0.1:${{ job.services.mysql.ports['3306'] }}" >> $GITHUB_ENV
 
       - name: Prepare test database
-        if: ${{ matrix.dbtype !== 'sqlite' && matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
+        if: ${{ matrix.dbtype != 'sqlite' && matrix.php >= inputs.minimum-php && steps.check_files.outputs.files_exists == 'true' }}
         run: composer prepare-tests
 
       - name: Check Behat environment
