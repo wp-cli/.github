@@ -1,0 +1,154 @@
+{
+  "include": [
+    {
+      "php": "7.0",
+      "wp": "latest",
+      "mysql": "8.0"
+    },
+    {
+      "php": "7.0",
+      "wp": "latest",
+      "dbtype": "sqlite"
+    },
+    {
+      "php": "7.1",
+      "wp": "latest",
+      "mysql": "8.0"
+    },
+    {
+      "php": "7.1",
+      "wp": "latest",
+      "dbtype": "sqlite"
+    },
+    {
+      "php": "7.2",
+      "wp": "latest",
+      "mysql": "8.0"
+    },
+    {
+      "php": "7.2",
+      "wp": "latest",
+      "dbtype": "sqlite"
+    },
+    {
+      "php": "7.3",
+      "wp": "latest",
+      "mysql": "8.0"
+    },
+    {
+      "php": "7.3",
+      "wp": "latest",
+      "dbtype": "sqlite"
+    },
+    {
+      "php": "7.4",
+      "wp": "latest",
+      "mysql": "8.0"
+    },
+    {
+      "php": "7.4",
+      "wp": "latest",
+      "dbtype": "sqlite"
+    },
+    {
+      "php": "8.0",
+      "wp": "latest",
+      "mysql": "8.0"
+    },
+    {
+      "php": "8.0",
+      "wp": "latest",
+      "dbtype": "sqlite"
+    },
+    {
+      "php": "8.1",
+      "wp": "latest",
+      "mysql": "8.0"
+    },
+    {
+      "php": "8.1",
+      "wp": "latest",
+      "dbtype": "sqlite"
+    },
+    {
+      "php": "8.2",
+      "wp": "latest",
+      "mysql": "8.0"
+    },
+    {
+      "php": "8.2",
+      "wp": "latest",
+      "dbtype": "sqlite"
+    },
+    {
+      "php": "7.0",
+      "wp": "trunk",
+      "mysql": "8.0"
+    },
+    {
+      "php": "7.0",
+      "wp": "trunk",
+      "mysql": "5.7"
+    },
+    {
+      "php": "7.0",
+      "wp": "trunk",
+      "mysql": "5.6"
+    },
+    {
+      "php": "7.4",
+      "wp": "trunk",
+      "mysql": "8.0"
+    },
+    {
+      "php": "8.0",
+      "wp": "trunk",
+      "mysql": "8.0"
+    },
+    {
+      "php": "8.0",
+      "wp": "trunk",
+      "mysql": "5.7"
+    },
+    {
+      "php": "8.0",
+      "wp": "trunk",
+      "mysql": "5.6"
+    },
+    {
+      "php": "8.1",
+      "wp": "trunk",
+      "mysql": "8.0"
+    },
+    {
+      "php": "8.2",
+      "wp": "trunk",
+      "mysql": "8.0"
+    },
+    {
+      "php": "5.6",
+      "wp": "3.7",
+      "mysql": "5.6"
+    },
+    {
+      "php": "5.6",
+      "wp": "6.2",
+      "mysql": "8.0"
+    },
+    {
+      "php": "8.3",
+      "wp": "trunk",
+      "mysql": "8.0"
+    },
+    {
+      "php": "8.2",
+      "wp": "trunk",
+      "dbtype": "sqlite"
+    },
+    {
+      "php": "8.3",
+      "wp": "trunk",
+      "dbtype": "sqlite"
+    }
+  ]
+}
