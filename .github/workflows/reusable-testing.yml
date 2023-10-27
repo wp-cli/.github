@@ -30,6 +30,7 @@ jobs:
 
   unit: #-----------------------------------------------------------------------
     name: Unit test /  PHP ${{ matrix.php }}
+    needs: prepare-unit
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
@@ -99,6 +100,7 @@ jobs:
 
   functional: #-----------------------------------------------------------------
     name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && format('MySQL {0}', matrix.mysql) || 'SQLite' }}
+    needs: prepare-functional
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
