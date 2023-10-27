@@ -26,7 +26,7 @@ jobs:
 
     - name: Set matrix
       id: set-matrix
-      run: echo "matrix=$(jq -c '.include |= map(with_entries(select(.key == "php"))) | .include |= map(select(.php > "${{ inputs.minimum-php }}"))' < ./matrix.json)" >> $GITHUB_OUTPUT
+      run: echo "matrix=$(jq -c '.include |= map(with_entries(select(.key == "php"))) | .include |= map(select(.php >= "${{ inputs.minimum-php }}"))' < ./matrix.json)" >> $GITHUB_OUTPUT
 
   unit: #-----------------------------------------------------------------------
     name: Unit test /  PHP ${{ matrix.php }}
@@ -96,7 +96,7 @@ jobs:
 
     - name: Set matrix
       id: set-matrix
-      run: echo "matrix=$(jq -c '.include |= map(select(.php > "${{ inputs.minimum-php }}"))' < ./matrix.json)" >> $GITHUB_OUTPUT
+      run: echo "matrix=$(jq -c '.include |= map(select(.php >= "${{ inputs.minimum-php }}"))' < ./matrix.json)" >> $GITHUB_OUTPUT
 
   functional: #-----------------------------------------------------------------
     name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && format('MySQL {0}', matrix.mysql) || 'SQLite' }}
