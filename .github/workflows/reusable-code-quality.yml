@@ -105,7 +105,7 @@ jobs:
         uses: asdf-vm/actions/install@v3
         with:
           tool_versions: |
-            action-validator latest
+            action-validator 0.5.3
 
       - name: Validate Actions
         run: |
