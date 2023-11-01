@@ -97,9 +97,13 @@ jobs:
   actions: #----------------------------------------------------------------------
     name: Validate GitHub Actions workflows
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install action-validator with asdf
         uses: asdf-vm/actions/install@v3
