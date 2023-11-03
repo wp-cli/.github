@@ -191,23 +191,26 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-    - name: Check existence of composer.json file
-      id: check_files
-      uses: andstor/file-existence-action@v2
-      with:
-        files: "composer.json, phpunit.xml.dist"
+      - name: Check out source code
+        uses: actions/checkout@v4
 
-    - name: Set matrix
-      id: set-matrix
-      run: |
-        if [[ $FILE_EXISTS == 'true' ]]; then
-          echo "matrix=$(jq -c '.include |= map(with_entries(select(.key == "php"))) | .include |= map(select(.php >= "${{ inputs.minimum-php }}"))' <<< $BASE_MATRIX)" >> $GITHUB_OUTPUT
-        else
-          echo "matrix={}" >> $GITHUB_OUTPUT
-        fi
-      env:
-        BASE_MATRIX: ${{ needs.get-matrix.outputs.matrix }}
-        FILE_EXISTS: ${{ steps.check_files.outputs.files_exists == 'true' }}
+      - name: Check existence of composer.json file
+        id: check_files
+        uses: andstor/file-existence-action@v2
+        with:
+          files: "composer.json, phpunit.xml.dist"
+
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          if [[ $FILE_EXISTS == 'true' ]]; then
+            echo "matrix=$(jq -c '.include |= map(with_entries(select(.key == "php"))) | .include |= map(select(.php >= "${{ inputs.minimum-php }}"))' <<< $BASE_MATRIX)" >> $GITHUB_OUTPUT
+          else
+            echo "matrix={}" >> $GITHUB_OUTPUT
+          fi
+        env:
+          BASE_MATRIX: ${{ needs.get-matrix.outputs.matrix }}
+          FILE_EXISTS: ${{ steps.check_files.outputs.files_exists == 'true' }}
 
   unit: #-----------------------------------------------------------------------
     name: Unit test /  PHP ${{ matrix.php }}
@@ -265,6 +268,9 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+
       - name: Check existence of composer.json & behat.yml files
         id: check_files
         uses: andstor/file-existence-action@v2
