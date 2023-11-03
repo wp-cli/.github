@@ -22,18 +22,6 @@ jobs:
     outputs:
       matrix: ${{ steps.base-matrix.outputs.matrix }}
     steps:
-    - name: Check existence of unit test files
-      id: check_phpunit
-      uses: andstor/file-existence-action@v2
-      with:
-        files: "composer.json, phpunit.xml.dist"
-
-    - name: Check existence of functional test files
-      id: check_behat
-      uses: andstor/file-existence-action@v2
-      with:
-        files: "composer.json, behat.yml"
-
     - name: Set matrix
       id: base-matrix
       run: |
