@@ -34,8 +34,6 @@ jobs:
       with:
         files: "composer.json, behat.yml"
 
-        # ${{ matrix.php < '7.2' && steps.check_files.outputs.files_exists == 'true' }}
-
     - name: Set matrix
       id: base-matrix
       run: |
