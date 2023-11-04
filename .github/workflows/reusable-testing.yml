@@ -194,7 +194,7 @@ jobs:
       - name: Check out source code
         uses: actions/checkout@v4
 
-      - name: Check existence of composer.json file
+      - name: Check existence of composer.json & phpunit.xml.dist files
         id: check_files
         uses: andstor/file-existence-action@v2
         with:
