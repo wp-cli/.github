@@ -206,7 +206,7 @@ jobs:
           if [[ $FILE_EXISTS == 'true' ]]; then
             echo "matrix=$(jq -c '.include |= map(with_entries(select(.key == "php"))) | .include |= map(select(.php >= "${{ inputs.minimum-php }}"))' <<< $BASE_MATRIX)" >> $GITHUB_OUTPUT
           else
-            echo "matrix={}" >> $GITHUB_OUTPUT
+            echo "matrix=" >> $GITHUB_OUTPUT
           fi
         env:
           BASE_MATRIX: ${{ needs.get-matrix.outputs.matrix }}
@@ -215,6 +215,7 @@ jobs:
   unit: #-----------------------------------------------------------------------
     name: Unit test /  PHP ${{ matrix.php }}
     needs: prepare-unit
+    if: ${{ needs.prepare-unit.outputs.matrix != '' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
@@ -283,7 +284,7 @@ jobs:
           if [[ $FILE_EXISTS == 'true' ]]; then
             echo "matrix=$(jq -c '.include |= map(select(.php >= "${{ inputs.minimum-php }}"))' <<< $BASE_MATRIX)" >> $GITHUB_OUTPUT
           else
-            echo "matrix={}" >> $GITHUB_OUTPUT
+            echo "matrix=" >> $GITHUB_OUTPUT
           fi
         env:
           BASE_MATRIX: ${{ needs.get-matrix.outputs.matrix }}
@@ -292,6 +293,7 @@ jobs:
   functional: #-----------------------------------------------------------------
     name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && format('MySQL {0}', matrix.mysql) || 'SQLite' }}
     needs: prepare-functional
+    if: ${{ needs.prepare-functional.outputs.matrix != '' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
