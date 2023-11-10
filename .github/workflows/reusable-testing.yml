@@ -213,9 +213,9 @@ jobs:
           FILE_EXISTS: ${{ steps.check_files.outputs.files_exists == 'true' }}
 
   unit: #-----------------------------------------------------------------------
-    name: Unit test /  PHP ${{ matrix.php }}
     needs: prepare-unit
     if: ${{ needs.prepare-unit.outputs.matrix != '' }}
+    name: Unit test /  PHP ${{ matrix.php }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
@@ -291,9 +291,9 @@ jobs:
           FILE_EXISTS: ${{ steps.check_files.outputs.files_exists == 'true' }}
 
   functional: #-----------------------------------------------------------------
-    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && format('MySQL {0}', matrix.mysql) || 'SQLite' }}
     needs: prepare-functional
     if: ${{ needs.prepare-functional.outputs.matrix != '' }}
+    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && format('MySQL {0}', matrix.mysql) || 'SQLite' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
