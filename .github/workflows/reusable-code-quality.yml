@@ -92,4 +92,11 @@ jobs:
 
       - name: Run PHPCS
         if: steps.check_phpcs_binary_file.outputs.files_exists == 'true'
-        run: vendor/bin/phpcs -q --report=checkstyle | cs2pr
+        run: vendor/bin/phpcs -q --report=full --report-checkstyle=/tmp/phpcs-checkstyle-report.xml
+
+      - name: Convert PHPCS report to PR comments
+        if: always()
+        run: |
+          if [ -f /tmp/phpcs-checkstyle-report.xml ]; then
+            cs2pr /tmp/phpcs-checkstyle-report.xml
+          fi
