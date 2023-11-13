@@ -221,8 +221,6 @@ jobs:
       matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
     runs-on: ubuntu-20.04
 
-    continue-on-error: ${{ matrix.php == '8.3' }}
-
     steps:
       - name: Check out source code
         uses: actions/checkout@v4
@@ -299,7 +297,7 @@ jobs:
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
     runs-on: ubuntu-20.04
 
-    continue-on-error: ${{ matrix.php == '8.3' || matrix.dbtype == 'sqlite' }}
+    continue-on-error: ${{ matrix.dbtype == 'sqlite' }}
 
     services:
       mysql:
