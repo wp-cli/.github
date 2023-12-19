@@ -348,10 +348,6 @@ jobs:
           # Bust the cache at least once a month - output format: YYYY-MM.
           custom-cache-suffix: $(date -u "+%Y-%m")
 
-      - name: Start MySQL server
-        if: ${{ matrix.dbtype != 'sqlite' }}
-        run: sudo systemctl start wpclimysql
-
       - name: Configure DB environment
         if: ${{ matrix.dbtype != 'sqlite' }}
         run: |
