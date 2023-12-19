@@ -300,11 +300,12 @@ jobs:
     continue-on-error: ${{ matrix.dbtype == 'sqlite' }}
 
     services:
-      mysql:
+      wpclimysql:
         # Workaround to not start MySQL service if not needed.
         image: ${{ matrix.dbtype != 'sqlite' && format('mysql:{0}', matrix.mysql) || '' }}
+        # We mount the socket to a non-default location to be sure we got the right one.
         volumes:
-          - /var/run/mysqld/mysqld.sock:/var/run/mysqld/mysqld.sock
+          - /tmp/mysqld.sock:/var/run/mysqld/mysqld.sock
         ports:
           - 3306
         options: >-
@@ -349,19 +350,19 @@ jobs:
 
       - name: Start MySQL server
         if: ${{ matrix.dbtype != 'sqlite' }}
-        run: sudo systemctl start mysql
+        run: sudo systemctl start wpclimysql
 
       - name: Configure DB environment
         if: ${{ matrix.dbtype != 'sqlite' }}
         run: |
           echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
-          echo "MYSQL_TCP_PORT=${{ job.services.mysql.ports['3306'] }}" >> $GITHUB_ENV
+          echo "MYSQL_TCP_PORT=${{ job.services.wpclimysql.ports['3306'] }}" >> $GITHUB_ENV
           echo "WP_CLI_TEST_DBROOTUSER=root" >> $GITHUB_ENV
           echo "WP_CLI_TEST_DBROOTPASS=root" >> $GITHUB_ENV
           echo "WP_CLI_TEST_DBNAME=wp_cli_test" >> $GITHUB_ENV
           echo "WP_CLI_TEST_DBUSER=wp_cli_test" >> $GITHUB_ENV
           echo "WP_CLI_TEST_DBPASS=password1" >> $GITHUB_ENV
-          echo "WP_CLI_TEST_DBHOST=127.0.0.1:${{ job.services.mysql.ports['3306'] }}" >> $GITHUB_ENV
+          echo "WP_CLI_TEST_DBHOST=127.0.0.1:${{ job.services.wpclimysql.ports['3306'] }}" >> $GITHUB_ENV
 
       - name: Prepare test database
         if: ${{ matrix.dbtype != 'sqlite' }}
