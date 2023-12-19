@@ -303,9 +303,19 @@ jobs:
       mysql:
         # Workaround to not start MySQL service if not needed.
         image: ${{ matrix.dbtype != 'sqlite' && format('mysql:{0}', matrix.mysql) || '' }}
+        volumes:
+          - /var/run/mysqld/mysqld.sock:/var/run/mysqld/mysqld.sock
         ports:
           - 3306
-        options: --health-cmd="mysqladmin ping" --health-interval=30s --health-timeout=10s --health-retries=5 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=wp_cli_test --entrypoint sh mysql:${{ matrix.mysql }} -c "exec docker-entrypoint.sh mysqld --default-authentication-plugin=mysql_native_password"
+        options: >-
+          -e MYSQL_ROOT_PASSWORD=root
+          -e MYSQL_DATABASE=wp_cli_test
+          --health-cmd="mysqladmin ping"
+          --health-interval=30s
+          --health-timeout=10s
+          --health-retries=5
+          --socket=/var/run/mysqld/mysqld.sock
+          --entrypoint sh mysql:${{ matrix.mysql }} -c "exec docker-entrypoint.sh mysqld --default-authentication-plugin=mysql_native_password"
 
     steps:
       - name: Check out source code
