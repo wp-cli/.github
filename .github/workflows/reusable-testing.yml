@@ -354,7 +354,6 @@ jobs:
           echo "WP_CLI_TEST_DBUSER=wp_cli_test" >> $GITHUB_ENV
           echo "WP_CLI_TEST_DBPASS=password1" >> $GITHUB_ENV
           echo "WP_CLI_TEST_DBHOST=127.0.0.1:3306" >> $GITHUB_ENV
-          echo "WP_CLI_TEST_DBSOCKET=${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock" >> $GITHUB_ENV
 
       - name: Prepare test database
         if: ${{ matrix.dbtype != 'sqlite' }}
@@ -364,10 +363,12 @@ jobs:
         env:
           WP_VERSION: '${{ matrix.wp }}'
           WP_CLI_TEST_DBTYPE: ${{ matrix.dbtype || 'mysql' }}
+          WP_CLI_TEST_DBSOCKET: '${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock'
         run: WP_CLI_TEST_DEBUG_BEHAT_ENV=1 composer behat
 
       - name: Run Behat
         env:
           WP_VERSION: '${{ matrix.wp }}'
           WP_CLI_TEST_DBTYPE: ${{ matrix.dbtype || 'mysql' }}
+          WP_CLI_TEST_DBSOCKET: '${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock'
         run: composer behat || composer behat-rerun
