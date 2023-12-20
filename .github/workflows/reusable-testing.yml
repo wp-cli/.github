@@ -299,24 +299,6 @@ jobs:
 
     continue-on-error: ${{ matrix.dbtype == 'sqlite' }}
 
-    services:
-      wpclimysql:
-        # Workaround to not start MySQL service if not needed.
-        image: ${{ matrix.dbtype != 'sqlite' && format('mysql:{0}', matrix.mysql) || '' }}
-        # We mount the socket to a non-default location to be sure we got the right one.
-        volumes:
-          - /tmp/mysqld.sock:/var/run/mysqld/mysqld.sock
-        ports:
-          - 3306
-        options: >-
-          -e MYSQL_ROOT_PASSWORD=root
-          -e MYSQL_DATABASE=wp_cli_test
-          --health-cmd="mysqladmin ping"
-          --health-interval=30s
-          --health-timeout=10s
-          --health-retries=5
-          --entrypoint sh mysql:${{ matrix.mysql }} -c "exec docker-entrypoint.sh mysqld --default-authentication-plugin=mysql_native_password --socket=/var/run/mysqld/mysqld.sock"
-
     steps:
       - name: Check out source code
         uses: actions/checkout@v4
@@ -348,17 +330,29 @@ jobs:
           # Bust the cache at least once a month - output format: YYYY-MM.
           custom-cache-suffix: $(date -u "+%Y-%m")
 
+      - name: Setup MySQL Server
+        id: setup-mysql
+        if: ${{ matrix.dbtype != 'sqlite' }}
+        uses: shogo82148/actions-setup-mysql@v1
+        with:
+          mysql-version: ${{ matrix.mysql }}
+          auto-start: true
+          root-password: root
+          user: wp_cli_test
+          password: password1
+
       - name: Configure DB environment
         if: ${{ matrix.dbtype != 'sqlite' }}
         run: |
           echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
-          echo "MYSQL_TCP_PORT=${{ job.services.wpclimysql.ports['3306'] }}" >> $GITHUB_ENV
+          echo "MYSQL_TCP_PORT=3306" >> $GITHUB_ENV
           echo "WP_CLI_TEST_DBROOTUSER=root" >> $GITHUB_ENV
           echo "WP_CLI_TEST_DBROOTPASS=root" >> $GITHUB_ENV
           echo "WP_CLI_TEST_DBNAME=wp_cli_test" >> $GITHUB_ENV
           echo "WP_CLI_TEST_DBUSER=wp_cli_test" >> $GITHUB_ENV
           echo "WP_CLI_TEST_DBPASS=password1" >> $GITHUB_ENV
-          echo "WP_CLI_TEST_DBHOST=127.0.0.1:${{ job.services.wpclimysql.ports['3306'] }}" >> $GITHUB_ENV
+          echo "WP_CLI_TEST_DBHOST=127.0.0.1:3306" >> $GITHUB_ENV
+          echo "WP_CLI_TEST_DBSOCKET=${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock" >> $GITHUB_ENV
 
       - name: Prepare test database
         if: ${{ matrix.dbtype != 'sqlite' }}
