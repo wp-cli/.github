@@ -100,3 +100,12 @@ jobs:
           if [ -f /tmp/phpcs-checkstyle-report.xml ]; then
             cs2pr /tmp/phpcs-checkstyle-report.xml
           fi
+
+  spell-checker: #----------------------------------------------------------------------
+    name: Spell Check with Typos
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Search for misspellings
+        uses: crate-ci/typos@master
