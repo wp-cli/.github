@@ -109,17 +109,17 @@ jobs:
               "dbtype": "sqlite"
             },
             {
-              "php": "7.0",
+              "php": "7.2",
               "wp": "trunk",
               "mysql": "8.0"
             },
             {
-              "php": "7.0",
+              "php": "7.2",
               "wp": "trunk",
               "mysql": "5.7"
             },
             {
-              "php": "7.0",
+              "php": "7.2",
               "wp": "trunk",
               "mysql": "5.6"
             },
@@ -177,6 +177,16 @@ jobs:
               "php": "8.3",
               "wp": "trunk",
               "dbtype": "sqlite"
+            },
+            {
+              "php": "8.4",
+              "wp": "trunk",
+              "mysql": "8.0"
+            },
+            {
+              "php": "8.4",
+              "wp": "trunk",
+              "dbtype": "sqlite"
             }
           ]
         }
@@ -220,6 +230,8 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
     runs-on: ubuntu-20.04
+
+    continue-on-error: ${{ matrix.php == '8.4' }}
 
     steps:
       - name: Check out source code
