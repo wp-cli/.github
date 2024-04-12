@@ -309,7 +309,7 @@ jobs:
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
     runs-on: ubuntu-20.04
 
-    continue-on-error: ${{ matrix.dbtype == 'sqlite' }}
+    continue-on-error: ${{ matrix.dbtype == 'sqlite' || matrix.php == '8.4' }}
 
     steps:
       - name: Check out source code
