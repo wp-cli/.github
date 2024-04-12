@@ -109,17 +109,17 @@ jobs:
               "dbtype": "sqlite"
             },
             {
-              "php": "7.0",
+              "php": "7.2",
               "wp": "trunk",
               "mysql": "8.0"
             },
             {
-              "php": "7.0",
+              "php": "7.2",
               "wp": "trunk",
               "mysql": "5.7"
             },
             {
-              "php": "7.0",
+              "php": "7.2",
               "wp": "trunk",
               "mysql": "5.6"
             },
