@@ -214,7 +214,7 @@ jobs:
         id: set-matrix
         run: |
           if [[ $FILE_EXISTS == 'true' ]]; then
-            echo "matrix=$(jq -c '.include |= map(with_entries(select(.key == "php"))) | .include |= map(select(.php >= "${{ inputs.minimum-php }}"))' <<< $BASE_MATRIX)" >> $GITHUB_OUTPUT
+            echo "matrix=$(jq -c '.include |= map(with_entries(select(.key == "php"))) | .include |= map(select(.php >= "${{ inputs.minimum-php }}")) | .include |= unique_by(.php)' <<< $BASE_MATRIX)" >> $GITHUB_OUTPUT
           else
             echo "matrix=" >> $GITHUB_OUTPUT
           fi
