@@ -34,26 +34,6 @@ jobs:
         {
           "include": [
             {
-              "php": "7.0",
-              "wp": "latest",
-              "mysql": "8.0"
-            },
-            {
-              "php": "7.0",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "7.1",
-              "wp": "latest",
-              "mysql": "8.0"
-            },
-            {
-              "php": "7.1",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
               "php": "7.2",
               "wp": "latest",
               "mysql": "8.0"
