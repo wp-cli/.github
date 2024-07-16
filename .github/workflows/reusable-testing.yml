@@ -8,6 +8,11 @@ on:
         type: string
         required: false
         default: '5.6'
+      minimum-wp:
+        description: 'Minimum WP version to test against.'
+        type: string
+        required: false
+        default: '3.7'
 
 # Cancels all previous workflow runs for the same branch that have not yet completed.
 concurrency:
@@ -292,7 +297,7 @@ jobs:
         id: set-matrix
         run: |
           if [[ $FILE_EXISTS == 'true' ]]; then
-            echo "matrix=$(jq -c '.include |= map(select(.php >= "${{ inputs.minimum-php }}"))' <<< $BASE_MATRIX)" >> $GITHUB_OUTPUT
+            echo "matrix=$(jq -c '.include |= map(select(.wp == "3.7").wp |= "${{ inputs.minimum-wp }}") | .include |= map(select(.php >= "${{ inputs.minimum-php }}"))' <<< $BASE_MATRIX)" >> $GITHUB_OUTPUT
           else
             echo "matrix=" >> $GITHUB_OUTPUT
           fi
