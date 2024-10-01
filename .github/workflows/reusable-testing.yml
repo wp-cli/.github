@@ -226,6 +226,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '${{ matrix.php }}'
+          ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
           coverage: none
           tools: composer,cs2pr
         env:
@@ -297,6 +298,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '${{ matrix.php }}'
+          ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
           extensions: gd, imagick, mysql, zip
           coverage: none
           tools: composer
