@@ -164,12 +164,12 @@ jobs:
               "dbtype": "sqlite"
             },
             {
-              "php": "8.4",
+              "php": "nightly",
               "wp": "trunk",
               "mysql": "8.0"
             },
             {
-              "php": "8.4",
+              "php": "nightly",
               "wp": "trunk",
               "dbtype": "sqlite"
             }
@@ -216,7 +216,7 @@ jobs:
       matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
     runs-on: ubuntu-20.04
 
-    continue-on-error: ${{ matrix.php == '8.4' }}
+    continue-on-error: ${{ matrix.php == 'nightly' }}
 
     steps:
       - name: Check out source code
@@ -282,7 +282,7 @@ jobs:
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
     runs-on: ubuntu-20.04
 
-    continue-on-error: ${{ matrix.dbtype == 'sqlite' || matrix.php == '8.4' }}
+    continue-on-error: ${{ matrix.dbtype == 'sqlite' || matrix.php == 'nightly' }}
 
     steps:
       - name: Check out source code
