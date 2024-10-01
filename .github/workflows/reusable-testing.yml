@@ -240,6 +240,26 @@ jobs:
           # Bust the cache at least once a month - output format: YYYY-MM.
           custom-cache-suffix: $(date -u "+%Y-%m")
 
+      - name: Grab PHPUnit version
+        id: phpunit_version
+        run: echo "VERSION=$(vendor/bin/phpunit --version | grep --only-matching --max-count=1 --extended-regexp '\b[0-9]+\.[0-9]+')" >> $GITHUB_OUTPUT
+
+      - name: Determine PHPUnit flavour
+        id: phpunit_version
+        run: |
+          if [ startsWith( steps.phpunit_version.outputs.VERSION, '10.' ) }}" == "true" ]; then
+            echo 'FLAVOUR=gte10' >> $GITHUB_OUTPUT
+          else
+            echo 'FLAVOUR=lte9' >> $GITHUB_OUTPUT
+          fi
+
+      # PHPUnit 10 may fail a test run when the "old" configuration format is used.
+      # Luckily, there is a build-in migration tool since PHPUnit 9.3.
+      - name: Migrate PHPUnit configuration for PHPUnit 10+
+        if: ${{ steps.phpunit_version.outputs.FLAVOUR == 'gte10' }}
+        continue-on-error: true
+        run: composer phpunit -- --migrate-configuration
+
       - name: Setup problem matcher to provide annotations for PHPUnit
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
