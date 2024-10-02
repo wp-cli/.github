@@ -1,0 +1,12 @@
+name: Lint GitHub Actions workflows
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  lint-workflows:
+    uses: inpsyde/reusable-workflows/.github/workflows/lint-workflows.yml@main
