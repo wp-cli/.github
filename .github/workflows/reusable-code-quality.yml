@@ -11,6 +11,23 @@ concurrency:
 
 jobs:
 
+  actionlint: #-----------------------------------------------------------------------
+    name: Lint GitHub Actions workflows
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+
+      - name: Add problem matcher
+        run: |
+          curl -s -o .github/actionlint-matcher.json https://raw.githubusercontent.com/rhysd/actionlint/main/.github/actionlint-matcher.json
+          echo "::add-matcher::.github/actionlint-matcher.json"
+
+      - name: Check workflow files
+        uses: docker://rhysd/actionlint:latest
+        with:
+          args: -color -shellcheck=
+
   lint: #-----------------------------------------------------------------------
     name: Lint PHP files
     runs-on: ubuntu-latest
