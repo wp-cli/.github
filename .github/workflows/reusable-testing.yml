@@ -164,6 +164,16 @@ jobs:
               "dbtype": "sqlite"
             },
             {
+              "php": "8.4",
+              "wp": "trunk",
+              "mysql": "8.0"
+            },
+            {
+              "php": "8.4",
+              "wp": "trunk",
+              "dbtype": "sqlite"
+            },
+            {
               "php": "nightly",
               "wp": "trunk",
               "mysql": "8.0"
