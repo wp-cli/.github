@@ -319,7 +319,8 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '${{ matrix.php }}'
-          ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
+          # Disable error reporting for Behat tests on PHP 8.4+, as long as Behat is not upgraded to a newer version.
+          ini-values: ${{ matrix.php != '8.4' && matrix.php != 'nightly' && 'zend.assertions=1, error_reporting=-1, display_errors=On' || '' }}
           extensions: gd, imagick, mysql, zip
           coverage: none
           tools: composer
