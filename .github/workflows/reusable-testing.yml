@@ -23,7 +23,7 @@ concurrency:
 jobs:
   get-matrix:
     name: Get base test matrix
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.base-matrix.outputs.matrix }}
     steps:
@@ -192,7 +192,7 @@ jobs:
   prepare-unit:
     name: Prepare matrix for unit tests
     needs: get-matrix
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -224,7 +224,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     continue-on-error: ${{ matrix.php == 'nightly' }}
 
@@ -270,7 +270,7 @@ jobs:
   prepare-functional: #---------------------------------------------------------
     name: Prepare matrix for functional tests
     needs: get-matrix
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
@@ -302,7 +302,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     continue-on-error: ${{ matrix.dbtype == 'sqlite' || matrix.php == 'nightly' }}
 
