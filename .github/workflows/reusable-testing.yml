@@ -313,7 +313,7 @@ jobs:
   functional: #-----------------------------------------------------------------
     needs: prepare-functional
     if: ${{ needs.prepare-functional.outputs.matrix != '' }}
-    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && format('MySQL {0}', matrix.mysql) || 'SQLite' }}
+    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && format('MySQL {0}', matrix.mysql) || 'SQLite' }}${{ matrix.coverage && ' (with coverage)' || '' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
