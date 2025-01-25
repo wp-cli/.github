@@ -107,13 +107,13 @@ jobs:
               "php": "8.3",
               "wp": "latest",
               "mysql": "8.0",
-              "coverage" true
+              "coverage": true
             },
             {
               "php": "8.3",
               "wp": "latest",
               "dbtype": "sqlite",
-              "coverage" true
+              "coverage": true
             },
             {
               "php": "7.2",
