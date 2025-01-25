@@ -156,6 +156,11 @@ jobs:
               "mysql": "8.0"
             },
             {
+              "php": "8.2",
+              "wp": "trunk",
+              "mysql": "8.0"
+            },
+            {
               "php": "8.3",
               "wp": "trunk",
               "mysql": "8.0"
