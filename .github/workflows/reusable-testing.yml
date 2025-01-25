@@ -395,7 +395,7 @@ jobs:
           WP_VERSION: '${{ matrix.wp }}'
           WP_CLI_TEST_DBTYPE: ${{ matrix.dbtype || 'mysql' }}
           WP_CLI_TEST_DBSOCKET: '${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock'
-          BEHAT_CODE_COVERAGE: ${{ matrix.coverage }}
+          WP_CLI_TEST_COVERAGE: ${{ matrix.coverage }}
         run: composer behat || composer behat-rerun
 
       - name: Retrieve list of coverage files
