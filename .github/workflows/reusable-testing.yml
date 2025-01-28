@@ -402,18 +402,20 @@ jobs:
           WP_CLI_TEST_COVERAGE: ${{ matrix.coverage }}
         run: composer behat || composer behat-rerun
 
-      - name: Debug
+      - name: Retrieve list of coverage files
+        id: coverage_files
         if: ${{ matrix.coverage }}
         run: |
-          echo "first"
-          ls -lah build/logs
-          echo "second"
-          ls -lah $GITHUB_WORKSPACE/build/logs
+          FILES=$(ls -d -1 "$GITHUB_WORKSPACE/build/logs/clover-behat/"*.* | paste --serial --delimiters=",")
+          test -n "$FILES"
+          echo "Coverage files: $FILES"
+          echo "files=$FILES" >> $GITHUB_OUTPUT
 
       - name: Upload code coverage report
         if: ${{ matrix.coverage }}
         uses: codecov/codecov-action@v5.3.1
         with:
-          directory: build/logs
+          # Because somehow providing `directory: build/logs` doesn't work for these files
+          files: ${{ steps.coverage_files.outputs.files }}
           flags: feature
           token: ${{ secrets.CODECOV_TOKEN }}
