@@ -406,9 +406,8 @@ jobs:
         id: coverage_files
         if: ${{ matrix.coverage }}
         run: |
-          FILES=$(ls -d -1 "$GITHUB_WORKSPACE/build/logs"*.* | paste --serial --delimiters=",")
-          test -n "$FILES"
-          echo "Coverage files: $FILES"
+          ls - lah "$GITHUB_WORKSPACE/build/logs
+          FILES=$(ls -m "$GITHUB_WORKSPACE/build/logs")
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
       - name: Upload code coverage report
