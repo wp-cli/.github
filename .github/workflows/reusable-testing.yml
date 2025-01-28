@@ -402,6 +402,11 @@ jobs:
           WP_CLI_TEST_COVERAGE: ${{ matrix.coverage }}
         run: composer behat || composer behat-rerun
 
+      - name: Debug
+        if: ${{ matrix.coverage }}
+        run: |
+          ls -lah $GITHUB_WORKSPACE/build/logs
+
       - name: Upload code coverage report
         if: ${{ matrix.coverage }}
         uses: codecov/codecov-action@v5.3.1
