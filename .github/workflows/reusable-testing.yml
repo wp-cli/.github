@@ -285,7 +285,6 @@ jobs:
         with:
           directory: build/logs
           flags: unit
-          fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
   prepare-functional: #---------------------------------------------------------
@@ -408,7 +407,6 @@ jobs:
         if: ${{ matrix.coverage }}
         uses: codecov/codecov-action@v5.3.1
         with:
-          directory: build/logs/clover-behat
+          directory: build/logs
           flags: feature
-          fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
