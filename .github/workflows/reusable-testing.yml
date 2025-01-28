@@ -112,8 +112,7 @@ jobs:
             {
               "php": "8.3",
               "wp": "latest",
-              "dbtype": "sqlite",
-              "coverage": true
+              "dbtype": "sqlite"
             },
             {
               "php": "7.2",
