@@ -405,6 +405,9 @@ jobs:
       - name: Debug
         if: ${{ matrix.coverage }}
         run: |
+          echo "first"
+          ls -lah build/logs
+          echo "second"
           ls -lah $GITHUB_WORKSPACE/build/logs
 
       - name: Upload code coverage report
