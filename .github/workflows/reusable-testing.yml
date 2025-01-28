@@ -406,7 +406,7 @@ jobs:
         id: coverage_files
         if: ${{ matrix.coverage }}
         run: |
-          FILES=$(ls -d -1 "$GITHUB_WORKSPACE/build/logs/clover-behat/"*.* | paste --serial --delimiters=",")
+          FILES=$(ls -d -1 "$GITHUB_WORKSPACE/build/logs"*.* | paste --serial --delimiters=",")
           test -n "$FILES"
           echo "Coverage files: $FILES"
           echo "files=$FILES" >> $GITHUB_OUTPUT
