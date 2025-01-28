@@ -406,7 +406,7 @@ jobs:
         id: coverage_files
         if: ${{ matrix.coverage }}
         run: |
-          ls - lah "$GITHUB_WORKSPACE/build/logs"
+          ls -lah "$GITHUB_WORKSPACE/build/logs"
           FILES=$(ls -m "$GITHUB_WORKSPACE/build/logs")
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
