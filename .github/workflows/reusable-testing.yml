@@ -34,111 +34,6 @@ jobs:
         {
           "include": [
             {
-              "php": "7.2",
-              "wp": "latest",
-              "mysql": "8.0"
-            },
-            {
-              "php": "7.2",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "7.3",
-              "wp": "latest",
-              "mysql": "8.0"
-            },
-            {
-              "php": "7.3",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "7.4",
-              "wp": "latest",
-              "mysql": "8.0"
-            },
-            {
-              "php": "7.4",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.0",
-              "wp": "latest",
-              "mysql": "8.0"
-            },
-            {
-              "php": "8.0",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.1",
-              "wp": "latest",
-              "mysql": "8.0"
-            },
-            {
-              "php": "8.1",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.2",
-              "wp": "latest",
-              "mysql": "8.0"
-            },
-            {
-              "php": "8.2",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "7.2",
-              "wp": "trunk",
-              "mysql": "8.0"
-            },
-            {
-              "php": "7.2",
-              "wp": "trunk",
-              "mysql": "5.7"
-            },
-            {
-              "php": "7.2",
-              "wp": "trunk",
-              "mysql": "5.6"
-            },
-            {
-              "php": "7.4",
-              "wp": "trunk",
-              "mysql": "8.0"
-            },
-            {
-              "php": "8.0",
-              "wp": "trunk",
-              "mysql": "8.0"
-            },
-            {
-              "php": "8.0",
-              "wp": "trunk",
-              "mysql": "5.7"
-            },
-            {
-              "php": "8.0",
-              "wp": "trunk",
-              "mysql": "5.6"
-            },
-            {
-              "php": "8.1",
-              "wp": "trunk",
-              "mysql": "8.0"
-            },
-            {
-              "php": "8.2",
-              "wp": "trunk",
-              "mysql": "8.0"
-            },
-            {
               "php": "5.6",
               "wp": "3.7",
               "mysql": "5.6"
@@ -149,14 +44,125 @@ jobs:
               "mysql": "8.0"
             },
             {
+              "php": "7.2",
+              "wp": "latest",
+              "mysql": "8.0"
+            },
+            {
+              "php": "7.2",
+              "wp": "latest",
+              "dbtype": "sqlite"
+            },
+            {
+              "php": "7.3",
+              "wp": "latest",
+              "mysql": "8.0"
+            },
+            {
+              "php": "7.3",
+              "wp": "latest",
+              "dbtype": "sqlite"
+            },
+            {
+              "php": "7.4",
+              "wp": "latest",
+              "mysql": "8.0"
+            },
+            {
+              "php": "7.4",
+              "wp": "latest",
+              "dbtype": "sqlite"
+            },
+            {
+              "php": "8.0",
+              "wp": "latest",
+              "mysql": "8.0"
+            },
+            {
+              "php": "8.0",
+              "wp": "latest",
+              "dbtype": "sqlite"
+            },
+            {
+              "php": "8.1",
+              "wp": "latest",
+              "mysql": "8.0"
+            },
+            {
+              "php": "8.1",
+              "wp": "latest",
+              "dbtype": "sqlite"
+            },
+            {
+              "php": "8.2",
+              "wp": "latest",
+              "mysql": "8.0"
+            },
+            {
+              "php": "8.2",
+              "wp": "latest",
+              "dbtype": "sqlite"
+            },
+            {
               "php": "8.3",
+              "wp": "latest",
+              "mysql": "8.0",
+              "coverage": true
+            },
+            {
+              "php": "8.3",
+              "wp": "latest",
+              "dbtype": "sqlite"
+            },
+            {
+              "php": "7.2",
+              "wp": "trunk",
+              "mysql": "8.0"
+            },
+            {
+              "php": "7.2",
+              "wp": "trunk",
+              "mysql": "5.7"
+            },
+            {
+              "php": "7.2",
+              "wp": "trunk",
+              "mysql": "5.6"
+            },
+            {
+              "php": "7.4",
+              "wp": "trunk",
+              "mysql": "8.0"
+            },
+            {
+              "php": "8.0",
+              "wp": "trunk",
+              "mysql": "8.0"
+            },
+            {
+              "php": "8.0",
+              "wp": "trunk",
+              "mysql": "5.7"
+            },
+            {
+              "php": "8.0",
+              "wp": "trunk",
+              "mysql": "5.6"
+            },
+            {
+              "php": "8.1",
               "wp": "trunk",
               "mysql": "8.0"
             },
             {
               "php": "8.2",
               "wp": "trunk",
-              "dbtype": "sqlite"
+              "mysql": "8.0"
+            },
+            {
+              "php": "8.3",
+              "wp": "trunk",
+              "mysql": "8.0"
             },
             {
               "php": "8.3",
@@ -209,7 +215,7 @@ jobs:
         id: set-matrix
         run: |
           if [[ $FILE_EXISTS == 'true' ]]; then
-            echo "matrix=$(jq -c '.include |= map(with_entries(select(.key == "php"))) | .include |= map(select(.php >= "${{ inputs.minimum-php }}")) | .include |= unique_by(.php)' <<< $BASE_MATRIX)" >> $GITHUB_OUTPUT
+            echo "matrix=$(jq -c '.include |= map(with_entries(select(.key == "php", .key == "coverage"))) | .include |= map(select(.php >= "${{ inputs.minimum-php }}")) | .include |= unique_by(.php)' <<< $BASE_MATRIX)" >> $GITHUB_OUTPUT
           else
             echo "matrix=" >> $GITHUB_OUTPUT
           fi
@@ -220,7 +226,7 @@ jobs:
   unit: #-----------------------------------------------------------------------
     needs: prepare-unit
     if: ${{ needs.prepare-unit.outputs.matrix != '' }}
-    name: Unit test /  PHP ${{ matrix.php }}
+    name: Unit test /  PHP ${{ matrix.php }}${{ matrix.coverage && ' (with coverage)' || '' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
@@ -237,7 +243,7 @@ jobs:
         with:
           php-version: '${{ matrix.php }}'
           ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
-          coverage: none
+          coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
           tools: composer,cs2pr
         env:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -265,7 +271,20 @@ jobs:
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Run PHPUnit
-        run: composer phpunit
+        run: |
+          if [[ ${{ matrix.coverage == true }} == true ]]; then
+            composer phpunit -- --coverage-clover build/logs/unit-coverage.xml
+          else
+            composer phpunit
+          fi
+
+      - name: Upload code coverage report
+        if: ${{ matrix.coverage }}
+        uses: codecov/codecov-action@v5.3.1
+        with:
+          directory: build/logs
+          flags: unit
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   prepare-functional: #---------------------------------------------------------
     name: Prepare matrix for functional tests
@@ -298,7 +317,7 @@ jobs:
   functional: #-----------------------------------------------------------------
     needs: prepare-functional
     if: ${{ needs.prepare-functional.outputs.matrix != '' }}
-    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && format('MySQL {0}', matrix.mysql) || 'SQLite' }}
+    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && format('MySQL {0}', matrix.mysql) || 'SQLite' }}${{ matrix.coverage && ' (with coverage)' || '' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
@@ -322,7 +341,7 @@ jobs:
           # Disable error reporting for Behat tests on PHP 8.4+, as long as Behat is not upgraded to a newer version.
           ini-values: ${{ matrix.php != '8.4' && matrix.php != 'nightly' && 'zend.assertions=1, error_reporting=-1, display_errors=On' || '' }}
           extensions: gd, imagick, mysql, zip
-          coverage: none
+          coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
           tools: composer
         env:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -380,4 +399,21 @@ jobs:
           WP_VERSION: '${{ matrix.wp }}'
           WP_CLI_TEST_DBTYPE: ${{ matrix.dbtype || 'mysql' }}
           WP_CLI_TEST_DBSOCKET: '${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock'
+          WP_CLI_TEST_COVERAGE: ${{ matrix.coverage }}
         run: composer behat || composer behat-rerun
+
+      - name: Retrieve list of coverage files
+        id: coverage_files
+        if: ${{ matrix.coverage }}
+        run: |
+          FILES=$(find "$GITHUB_WORKSPACE/build/logs" -path '*.*' | paste -s -d "," -)
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+      - name: Upload code coverage report
+        if: ${{ matrix.coverage }}
+        uses: codecov/codecov-action@v5.3.1
+        with:
+          # Because somehow providing `directory: build/logs` doesn't work for these files
+          files: ${{ steps.coverage_files.outputs.files }}
+          flags: feature
+          token: ${{ secrets.CODECOV_TOKEN }}
