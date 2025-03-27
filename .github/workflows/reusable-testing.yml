@@ -120,6 +120,11 @@ jobs:
               "dbtype": "sqlite"
             },
             {
+              "php": "8.3",
+              "wp": "latest",
+              "mysql": "mariadb-11.4"
+            },
+            {
               "php": "7.2",
               "wp": "trunk",
               "mysql": "mysql-8.0"
@@ -175,6 +180,11 @@ jobs:
               "dbtype": "sqlite"
             },
             {
+              "php": "8.3",
+              "wp": "trunk",
+              "mysql": "mariadb-11.4"
+            },
+            {
               "php": "8.4",
               "wp": "trunk",
               "mysql": "mysql-8.0"
@@ -193,16 +203,6 @@ jobs:
               "php": "nightly",
               "wp": "trunk",
               "dbtype": "sqlite"
-            },
-            {
-              "php": "8.3",
-              "wp": "latest",
-              "mysql": "mariadb-11.4"
-            },
-            {
-              "php": "8.3",
-              "wp": "trunk",
-              "mysql": "mariadb-11.4"
             }
           ]
         }
