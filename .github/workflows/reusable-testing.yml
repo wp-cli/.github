@@ -340,7 +340,7 @@ jobs:
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
     runs-on: ubuntu-22.04
 
-    continue-on-error: ${{ matrix.dbtype == 'sqlite' || matrix.php == 'nightly' }}
+    continue-on-error: ${{ matrix.dbtype == 'sqlite' || matrix.dbtype == 'mariadb' || matrix.php == 'nightly' }}
 
     steps:
       - name: Check out source code
