@@ -388,11 +388,12 @@ jobs:
           my-cnf: |
             default_authentication_plugin=mysql_native_password
 
-            # Disable server certificate verification by default, avoiding
+            # Explicitly enable server certificate verification by default, avoiding
             # "option --ssl-verify-server-cert is disabled, because of an insecure passwordless login."
-            # warnings because WP-CLI passes password via the `MYSQL_PWD` environment variable.
+            # warnings because WP-CLI passes password via the `MYSQL_PWD` environment variable
+            # and the setting is otherwise implicitly used.
             [client-mariadb]
-            disable-ssl-verify-server-cert
+            ssl-verify-server-cert
 
       - name: Configure DB environment
         if: ${{ matrix.dbtype != 'sqlite' }}
