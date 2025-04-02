@@ -70,6 +70,22 @@ jobs:
         if: steps.check_linter_file.outputs.files_exists == 'true'
         run: vendor/bin/parallel-lint -j 10 . --show-deprecated --exclude vendor --exclude .git --checkstyle | cs2pr
 
+  lint-gherkin: #----------------------------------------------------------------
+    name: Lint Gherkin Feature files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+
+      - name: Download lint rules
+        run: curl https://raw.githubusercontent.com/wp-cli/.github/refs/heads/main/.gherkin-lintrc -o $RUNNER_TEMP/.gherkin-lintrc
+
+      - name: Run linter
+        run: npx --yes gherkin-lint -c $RUNNER_TEMP/.gherkin-lintrc
+
   phpcs: #----------------------------------------------------------------------
     name: PHPCS
     runs-on: ubuntu-latest
