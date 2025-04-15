@@ -297,7 +297,7 @@ jobs:
 
       - name: Upload code coverage report
         if: ${{ matrix.coverage }}
-        uses: codecov/codecov-action@v5.4.0
+        uses: codecov/codecov-action@v5.4.2
         with:
           directory: build/logs
           flags: unit
@@ -439,7 +439,7 @@ jobs:
 
       - name: Upload code coverage report
         if: ${{ matrix.coverage }}
-        uses: codecov/codecov-action@v5.4.0
+        uses: codecov/codecov-action@v5.4.2
         with:
           # Because somehow providing `directory: build/logs` doesn't work for these files
           files: ${{ steps.coverage_files.outputs.files }}
