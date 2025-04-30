@@ -421,7 +421,11 @@ jobs:
           ARGS=()
 
           if [[ $WP_CLI_TEST_COVERAGE == 'true' ]]; then
-            ARGS+=("--xdebug")
+            # The flag was only added in v3.17.0
+            XDEBUG_FLAG=$(composer behat -- --help 2>/dev/null | grep xdebug)
+            if [[ -n $XDEBUG_FLAG ]]; then
+              ARGS+=("--xdebug")
+            fi
           fi
 
           if [[ $RUNNER_DEBUG == '1' ]]; then
