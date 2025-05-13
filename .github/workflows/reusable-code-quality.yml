@@ -77,11 +77,15 @@ jobs:
         run: |
           EXCLUDES=("--exclude vendor" "--exclude .git")
 
+          IFS=$'\n';
+
           for i in "${ADDITIONAL_EXCLUDES[@]}"; do
             if [ ! -z "$i" ]; then
               EXCLUDES+=("--exclude $i")
             fi
           done
+
+          unset IFS;
 
           echo "Providing excludes: ${EXCLUDES[*]}"
 
