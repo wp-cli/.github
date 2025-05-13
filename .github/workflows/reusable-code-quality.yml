@@ -2,6 +2,12 @@ name: Code Quality Checks
 
 on:
   workflow_call:
+    inputs:
+     parallel-lint-excludes:
+        description: 'Additional folders for parallel-lint to exclude, separated by newline'
+        type: string
+        required: false
+        default: ''
 
 # Cancels all previous workflow runs for the same branch that have not yet completed.
 concurrency:
@@ -68,7 +74,16 @@ jobs:
 
       - name: Run Linter
         if: steps.check_linter_file.outputs.files_exists == 'true'
-        run: vendor/bin/parallel-lint -j 10 . --show-deprecated --exclude vendor --exclude .git --checkstyle | cs2pr
+        run: |
+          EXCLUDES=("--exclude vendor" "--exclude .git")
+
+          for i in "${ADDITIONAL_EXCLUDES[@]}"; do
+            EXCLUDES+=("--exclude $i")
+          done
+
+          vendor/bin/parallel-lint -j 10 . --show-deprecated "${EXCLUDES[@]}" --checkstyle | cs2pr
+        env:
+          ADDITIONAL_EXCLUDES: ${{ inputs.parallel-lint-excludes }}
 
   lint-gherkin: #----------------------------------------------------------------
     name: Lint Gherkin Feature files
