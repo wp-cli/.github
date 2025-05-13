@@ -81,7 +81,7 @@ jobs:
             EXCLUDES+=("--exclude $i")
           done
 
-          vendor/bin/parallel-lint -j 10 . --show-deprecated "${EXCLUDES[@]}" --checkstyle | cs2pr
+          vendor/bin/parallel-lint -j 10 . --show-deprecated ${EXCLUDES[@]} --checkstyle | cs2pr
         env:
           ADDITIONAL_EXCLUDES: ${{ inputs.parallel-lint-excludes }}
 
