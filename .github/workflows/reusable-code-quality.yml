@@ -77,7 +77,9 @@ jobs:
         run: |
           EXCLUDES=("--exclude vendor" "--exclude .git")
 
+          ADDITIONAL_EXCLUDES=${ADDITIONAL_EXCLUDES%$'\n'}
           IFS=$'\n';
+          ADDITIONAL_EXCLUDES=($ADDITIONAL_EXCLUDES)
 
           for i in "${ADDITIONAL_EXCLUDES[@]}"; do
             if [ ! -z "$i" ]; then
