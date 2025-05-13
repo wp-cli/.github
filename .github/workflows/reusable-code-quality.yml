@@ -78,7 +78,9 @@ jobs:
           EXCLUDES=("--exclude vendor" "--exclude .git")
 
           for i in "${ADDITIONAL_EXCLUDES[@]}"; do
-            EXCLUDES+=("--exclude $i")
+            if [ ! -z i ]; then
+              EXCLUDES+=("--exclude $i")
+            fi
           done
 
           echo "Providing excludes: ${EXCLUDES[*]}"
