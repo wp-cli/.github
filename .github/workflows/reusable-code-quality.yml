@@ -78,7 +78,7 @@ jobs:
           EXCLUDES=("--exclude vendor" "--exclude .git")
 
           for i in "${ADDITIONAL_EXCLUDES[@]}"; do
-            if [ ! -z i ]; then
+            if [ ! -z "$i" ]; then
               EXCLUDES+=("--exclude $i")
             fi
           done
