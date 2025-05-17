@@ -267,10 +267,10 @@ jobs:
         id: phpunit_version
         run: echo "VERSION=$(vendor/bin/phpunit --version | grep --only-matching --max-count=1 --extended-regexp '\b[0-9]+\.[0-9]+')" >> $GITHUB_OUTPUT
 
-      # PHPUnit 10 may fail a test run when the "old" configuration format is used.
+      # PHPUnit 10+ may fail a test run when the "old" configuration format is used.
       # Luckily, there is a build-in migration tool since PHPUnit 9.3.
       - name: Migrate PHPUnit configuration for PHPUnit 10+
-        if: ${{ startsWith( steps.phpunit_version.outputs.VERSION, '10.' ) }}
+        if: ${{ startsWith( steps.phpunit_version.outputs.VERSION, '1' ) }}
         continue-on-error: true
         run: composer phpunit -- --migrate-configuration
 
