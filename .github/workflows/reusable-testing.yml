@@ -13,6 +13,11 @@ on:
         type: string
         required: false
         default: '4.9'
+      with-coverage:
+        description: 'Include coverages tests.'
+        type: boolean
+        required: false
+        default: true
 
 # Cancels all previous workflow runs for the same branch that have not yet completed.
 concurrency:
@@ -222,7 +227,31 @@ jobs:
         id: set-matrix
         run: |
           if [[ $FILE_EXISTS == 'true' ]]; then
-            echo "matrix=$(jq -c '.include |= map(with_entries(select(.key == "php", .key == "coverage"))) | .include |= map(select(.php >= "${{ inputs.minimum-php }}")) | .include |= unique_by(.php)' <<< $BASE_MATRIX)" >> $GITHUB_OUTPUT
+            echo "matrix=$(jq -c \
+              --argjson with_coverage_flag "${{ inputs.with-coverage }}" \
+              --arg minimum_php "${{ inputs.minimum-php }}" \
+              --arg minimum_wp "${{ inputs.minimum-wp }}" \
+              '
+              .include |= (
+                map(
+                  # First, select only the versions that meet all minimum requirements
+                  select(
+                    (.php >= $minimum_php) and
+                    (.wp == "latest" or .wp >= $minimum_wp)
+                  ) |
+
+                  # Next, update the coverage flag on the remaining items
+                  if $with_coverage_flag == false and .coverage == true then
+                    .coverage = false
+                  else
+                    .
+                  end
+                ) |
+
+                # Finally, get the unique entries
+                unique_by(.php)
+              )
+              ' <<< "$BASE_MATRIX")" >> $GITHUB_OUTPUT
           else
             echo "matrix=" >> $GITHUB_OUTPUT
           fi
@@ -313,7 +342,35 @@ jobs:
         id: set-matrix
         run: |
           if [[ $FILE_EXISTS == 'true' ]]; then
-            echo "matrix=$(jq -c '.include |= map(select(.wp == "4.9").wp |= "${{ inputs.minimum-wp }}") | .include |= map(select(.php >= "${{ inputs.minimum-php }}"))' <<< $BASE_MATRIX)" >> $GITHUB_OUTPUT
+            echo "matrix=$(jq -c \
+              --argjson with_coverage_flag "${{ inputs.with-coverage }}" \
+              --arg minimum_php "${{ inputs.minimum-php }}" \
+              --arg minimum_wp "${{ inputs.minimum-wp }}" \
+              '
+              # First, select only the versions that meet all minimum requirements
+              .include |= (
+                map(
+                  select(
+                    .php >= $minimum_php
+                  ) |
+                  # Next, update the coverage flag on the remaining items
+                  if $with_coverage_flag == false and .coverage == true then
+                    .coverage = false
+                  else
+                  .
+                  end
+                )
+              ) |
+
+              # Reassign WP4.9 to minimum_wp
+              .include |= (
+                map(
+                  select(
+                    .wp == "4.9"
+                  ).wp |= $minimum_wp
+                )
+              )
+              ' <<< "$BASE_MATRIX" )" >> $GITHUB_OUTPUT
           else
             echo "matrix=" >> $GITHUB_OUTPUT
           fi
