@@ -126,7 +126,7 @@ jobs:
 
       - name: Check spelling
         if: steps.check_files.outputs.files_exists == 'true'
-        uses: crate-ci/typos@v1.33.1
+        uses: crate-ci/typos@v1.34.0
 
   phpcs: #----------------------------------------------------------------------
     name: PHPCS
