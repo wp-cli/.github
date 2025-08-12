@@ -215,7 +215,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check existence of composer.json & phpunit.xml.dist files
         id: check_files
@@ -272,7 +272,7 @@ jobs:
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up PHP environment
         uses: shivammathur/setup-php@v2
@@ -330,7 +330,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check existence of composer.json & behat.yml files
         id: check_files
@@ -391,7 +391,7 @@ jobs:
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Ghostscript
         run: |
