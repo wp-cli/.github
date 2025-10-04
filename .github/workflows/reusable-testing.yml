@@ -270,7 +270,7 @@ jobs:
   unit: #-----------------------------------------------------------------------
     needs: prepare-unit
     if: ${{ needs.prepare-unit.outputs.matrix != '' }}
-    name: Unit test /  PHP ${{ matrix.php }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ startsWith( matrix.os, 'windows' ) && '(Windows)' }} ${{ startsWith( matrix.os, 'macos' ) && '(macOS)' }}
+    name: Unit test /  PHP ${{ matrix.php }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ startsWith( matrix.os, 'windows' ) && '(Windows)' || '' }} ${{ startsWith( matrix.os, 'macos' ) && '(macOS)' || '' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
@@ -390,7 +390,7 @@ jobs:
   functional: #-----------------------------------------------------------------
     needs: prepare-functional
     if: ${{ needs.prepare-functional.outputs.matrix != '' }}
-    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && matrix.mysql || 'SQLite' }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ startsWith( matrix.os, 'windows' ) && '(Windows)' }} ${{ startsWith( matrix.os, 'macos' ) && '(macOS)' }}
+    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && matrix.mysql || 'SQLite' }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ startsWith( matrix.os, 'windows' ) && '(Windows)' || '' }} ${{ startsWith( matrix.os, 'macos' ) && '(macOS)' || '' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
