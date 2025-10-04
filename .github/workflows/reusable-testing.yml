@@ -18,6 +18,11 @@ on:
         type: boolean
         required: false
         default: true
+      matrix:
+        description: 'Additional matrix entries to include or exclude.'
+        type: string
+        required: false
+        default: '{ "include": [], "exclude": [] }'
 
 # Cancels all previous workflow runs for the same branch that have not yet completed.
 concurrency:
@@ -34,6 +39,8 @@ jobs:
     steps:
     - name: Set matrix
       id: base-matrix
+      env:
+        ADDITIONAL_MATRIX: ${{ inputs.matrix }}
       run: |
         MATRIX=$(cat << EOF
         {
@@ -205,7 +212,8 @@ jobs:
         }
         EOF
         )
-        echo matrix=$MATRIX >> $GITHUB_OUTPUT
+        MERGED_MATRIX=$(echo "$MATRIX" "$ADDITIONAL_MATRIX" | jq -s '{include: (.[0].include + .[1].include | unique), exclude: (.[0].exclude + .[1].exclude | unique)}')
+        echo matrix=$MERGED_MATRIX >> $GITHUB_OUTPUT
 
   prepare-unit:
     name: Prepare matrix for unit tests
