@@ -102,7 +102,6 @@ jobs:
             wp-cli/package-command
             wp-cli/php-cli-tools
             wp-cli/profile-command
-            wp-cli/regenerate-readme
             wp-cli/restful
             wp-cli/rewrite-command
             wp-cli/role-command
