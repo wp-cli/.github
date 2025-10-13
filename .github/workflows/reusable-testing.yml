@@ -18,6 +18,11 @@ on:
         type: boolean
         required: false
         default: true
+      matrix:
+        description: 'Additional matrix entries to include or exclude.'
+        type: string
+        required: false
+        default: '{ "include": [], "exclude": [] }'
 
 # Cancels all previous workflow runs for the same branch that have not yet completed.
 concurrency:
@@ -34,6 +39,8 @@ jobs:
     steps:
     - name: Set matrix
       id: base-matrix
+      env:
+        ADDITIONAL_MATRIX: ${{ inputs.matrix }}
       run: |
         MATRIX=$(cat << EOF
         {
@@ -205,7 +212,8 @@ jobs:
         }
         EOF
         )
-        echo matrix=$MATRIX >> $GITHUB_OUTPUT
+        MERGED_MATRIX=$(echo "$MATRIX" "$ADDITIONAL_MATRIX" | jq -s '{include: (.[0].include + .[1].include | unique), exclude: (.[0].exclude + .[1].exclude | unique)}')
+        echo matrix=$MERGED_MATRIX >> $GITHUB_OUTPUT
 
   prepare-unit:
     name: Prepare matrix for unit tests
@@ -249,7 +257,7 @@ jobs:
                 ) |
 
                 # Finally, get the unique entries
-                unique_by(.php)
+                unique_by([.php, .os])
               )
               ' <<< "$BASE_MATRIX")" >> $GITHUB_OUTPUT
           else
@@ -262,11 +270,11 @@ jobs:
   unit: #-----------------------------------------------------------------------
     needs: prepare-unit
     if: ${{ needs.prepare-unit.outputs.matrix != '' }}
-    name: Unit test /  PHP ${{ matrix.php }}${{ matrix.coverage && ' (with coverage)' || '' }}
+    name: Unit test /  PHP ${{ matrix.php }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ startsWith( matrix.os, 'windows' ) && '(Windows)' || '' }} ${{ startsWith( matrix.os, 'macos' ) && '(macOS)' || '' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
 
     continue-on-error: ${{ matrix.php == 'nightly' }}
 
@@ -292,27 +300,28 @@ jobs:
           # Bust the cache at least once a month - output format: YYYY-MM.
           custom-cache-suffix: $(date -u "+%Y-%m")
 
-      - name: Grab PHPUnit version
-        id: phpunit_version
-        run: echo "VERSION=$(vendor/bin/phpunit --version | grep --only-matching --max-count=1 --extended-regexp '\b[0-9]+\.[0-9]+')" >> $GITHUB_OUTPUT
-
       # PHPUnit 10+ may fail a test run when the "old" configuration format is used.
       # Luckily, there is a build-in migration tool since PHPUnit 9.3.
       - name: Migrate PHPUnit configuration for PHPUnit 10+
-        if: ${{ startsWith( steps.phpunit_version.outputs.VERSION, '1' ) }}
+        if: ${{ matrix.php >= 8.2 || matrix.php == 'nightly' }}
         continue-on-error: true
         run: composer phpunit -- --migrate-configuration
 
       - name: Setup problem matcher to provide annotations for PHPUnit
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
-      - name: Run PHPUnit
+      - name: Run PHPUnit with coverage
+        if: ${{ matrix.coverage }}
         run: |
-          if [[ ${{ matrix.coverage == true }} == true ]]; then
-            composer phpunit -- --coverage-clover build/logs/unit-coverage.xml
-          else
-            composer phpunit
-          fi
+          composer phpunit -- --coverage-clover build/logs/unit-coverage.xml
+
+      - name: Run PHPUnit
+        if: ${{ ! matrix.coverage }}
+        # For example TestBehatTags.php in wp-cli-tests depends on the db type.
+        env:
+          WP_CLI_TEST_DBTYPE: 'sqlite'
+        run: |
+          composer phpunit
 
       - name: Upload code coverage report
         if: ${{ matrix.coverage }}
@@ -381,19 +390,30 @@ jobs:
   functional: #-----------------------------------------------------------------
     needs: prepare-functional
     if: ${{ needs.prepare-functional.outputs.matrix != '' }}
-    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && matrix.mysql || 'SQLite' }}${{ matrix.coverage && ' (with coverage)' || '' }}
+    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && matrix.mysql || 'SQLite' }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ startsWith( matrix.os, 'windows' ) && '(Windows)' || '' }} ${{ startsWith( matrix.os, 'macos' ) && '(macOS)' || '' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
 
     continue-on-error: ${{ matrix.dbtype == 'sqlite' || matrix.dbtype == 'mariadb' || matrix.php == 'nightly' }}
+
+    env:
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_TCP_PORT: 3306
+      WP_CLI_TEST_DBROOTUSER: root
+      WP_CLI_TEST_DBROOTPASS: root
+      WP_CLI_TEST_DBNAME: wp_cli_test
+      WP_CLI_TEST_DBUSER: wp_cli_test
+      WP_CLI_TEST_DBPASS: password1
+      WP_CLI_TEST_DBHOST: 127.0.0.1:3306
 
     steps:
       - name: Check out source code
         uses: actions/checkout@v5
 
       - name: Install Ghostscript
+        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.os == '' }}
         run: |
           sudo apt-get update
           sudo apt-get install ghostscript -y
@@ -403,13 +423,14 @@ jobs:
         with:
           php-version: '${{ matrix.php }}'
           ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
-          extensions: gd, imagick, mysql, zip
+          extensions: gd, imagick, mysql, zip, pdo_sqlite
           coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
           tools: composer
         env:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Change ImageMagick policy to allow pdf->png conversion.
+        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.os == '' }}
         run: |
           sudo sed -i 's/^.*policy.*coder.*none.*PDF.*//' /etc/ImageMagick-6/policy.xml
 
@@ -428,23 +449,11 @@ jobs:
         with:
           mysql-version: ${{ matrix.mysql }}
           auto-start: true
-          root-password: root
-          user: wp_cli_test
-          password: password1
+          root-password: ${{ env.WP_CLI_TEST_DBROOTPASS }}
+          user: ${{ env.WP_CLI_TEST_DBUSER}}
+          password: ${{ env.WP_CLI_TEST_DBPASS}}
           my-cnf: |
             default_authentication_plugin=mysql_native_password
-
-      - name: Configure DB environment
-        if: ${{ matrix.dbtype != 'sqlite' }}
-        run: |
-          echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
-          echo "MYSQL_TCP_PORT=3306" >> $GITHUB_ENV
-          echo "WP_CLI_TEST_DBROOTUSER=root" >> $GITHUB_ENV
-          echo "WP_CLI_TEST_DBROOTPASS=root" >> $GITHUB_ENV
-          echo "WP_CLI_TEST_DBNAME=wp_cli_test" >> $GITHUB_ENV
-          echo "WP_CLI_TEST_DBUSER=wp_cli_test" >> $GITHUB_ENV
-          echo "WP_CLI_TEST_DBPASS=password1" >> $GITHUB_ENV
-          echo "WP_CLI_TEST_DBHOST=127.0.0.1:3306" >> $GITHUB_ENV
 
       - name: Prepare test database
         if: ${{ matrix.dbtype != 'sqlite' }}
@@ -455,7 +464,8 @@ jobs:
           WP_VERSION: '${{ matrix.wp }}'
           WP_CLI_TEST_DBTYPE: ${{ matrix.dbtype || 'mysql' }}
           WP_CLI_TEST_DBSOCKET: '${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock'
-        run: WP_CLI_TEST_DEBUG_BEHAT_ENV=1 composer behat
+          WP_CLI_TEST_DEBUG_BEHAT_ENV: 1
+        run: composer behat
 
       - name: Run Behat
         env:
@@ -463,21 +473,9 @@ jobs:
           WP_CLI_TEST_DBTYPE: ${{ matrix.dbtype || 'mysql' }}
           WP_CLI_TEST_DBSOCKET: '${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock'
           WP_CLI_TEST_COVERAGE: ${{ matrix.coverage }}
+          BEHAT_ARGS: ${{ format( '{0} {1}', matrix.coverage && '--xdebug', runner.debug && '--format-pretty' ) }}
         run: |
-          ARGS=()
-
-          if [[ $WP_CLI_TEST_COVERAGE == 'true' ]]; then
-            # The flag was only added in v3.17.0
-            if composer behat -- --help 2>/dev/null | grep xdebug; then
-              ARGS+=("--xdebug")
-            fi
-          fi
-
-          if [[ $RUNNER_DEBUG == '1' ]]; then
-            ARGS+=("--format=pretty")
-          fi
-
-          composer behat -- "${ARGS[@]}" || composer behat-rerun -- "${ARGS[@]}"
+          composer behat -- $BEHAT_ARGS || composer behat-rerun -- $BEHAT_ARGS
 
       - name: Retrieve list of coverage files
         id: coverage_files
