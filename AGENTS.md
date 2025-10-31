@@ -11,41 +11,59 @@ When contributing to this package, please adhere to the following guidelines:
 * **Write Tests:** All new features and bug fixes must be accompanied by acceptance tests using Behat. You can find the existing tests in the `features/` directory. There may be PHPUnit unit tests as well in the `tests/` directory.
 * **Update Documentation:** If your changes affect the user-facing functionality, please update the relevant inline code documentation.
 
-## Building and running
+### Building and running
 
 Before submitting any changes, it is crucial to validate them by running the full suite of static code analysis and tests. Tu run the full suite of checks, execute the following command: `composer test`.
 
 This single command ensures that your changes meet all the quality gates of the project. While you can run the individual steps separately, it is highly recommended to use this single command to ensure a comprehensive validation.
 
-## Writing Tests
+### Useful Composer Commands
+
+The project uses Composer to manage dependencies and run scripts. The following commands are available:
+
+* `composer install`: Install dependencies.
+* `composer test`: Run the full test suite, including linting, code style checks, static analysis, and unit/behavior tests.
+* `composer lint`: Check for syntax errors.
+* `composer phpcs`: Check for code style violations.
+* `composer phpcbf`: Automatically fix code style violations.
+* `composer phpstan`: Run static analysis.
+* `composer phpunit`: Run unit tests.
+* `composer behat`: Run behavior-driven tests.
+
+### Coding Style
+
+The project follows the `WP_CLI_CS` coding standard, which is enforced by PHP_CodeSniffer. The configuration can be found in `phpcs.xml.dist`. Before submitting any code, please run `composer phpcs` to check for violations and `composer phpcbf` to automatically fix them.
+
+## Documentation
+
+The `README.md` file might be generated dynamically from the project's codebase using `wp scaffold package-readme` ([doc](https://github.com/wp-cli/scaffold-package-command#wp-scaffold-package-readme)). In that case, changes need to be made against the corresponding part of the codebase.
+
+### Inline Documentation
+
+Only write high-value comments if at all. Avoid talking to the user through comments.
+
+## Testing
+
+The project has a comprehensive test suite that includes unit tests, behavior-driven tests, and static analysis.
+
+* **Unit tests** are written with PHPUnit and can be found in the `tests/` directory. The configuration is in `phpunit.xml.dist`.
+* **Behavior-driven tests** are written with Behat and can be found in the `features/` directory. The configuration is in `behat.yml`.
+* **Static analysis** is performed with PHPStan.
+
+All tests are run on GitHub Actions for every pull request.
 
 When writing tests, aim to follow existing patterns. Key conventions include:
 
 * When adding tests, first examine existing tests to understand and conform to established conventions.
 * For unit tests, extend the base `WP_CLI\Tests\TestCase` test class.
 
-## Comments policy
-Only write high-value comments if at all. Avoid talking to the user through comments.
-
-## Useful Composer Commands
-
-Here are some useful Composer commands for this package:
-
-* `composer behat`: Run Behat acceptance tests.
-* `composer behat-rerun`: Re-run all Behat tests that failed in a previous run.
-* `composer lint`: Lint PHP files for syntax errors.
-* `composer phpcs`: Run PHP CodeSniffer to ensure adherence to coding style.
-* `composer phpcbf`: Try to automatically fix PHPCS errors.
-* `composer phpunit`: Run PHPUnit unit tests if there are any in the package.
-* `composer test`: Run lint, PHPCS, phpunit, and Behat all at once.
-
-## Behat Steps
+### Behat Steps
 
 WP-CLI makes use of a Behat-based testing framework and provides a set of custom step definitions to write feature tests.
 
-> **Note:** If you are expecting an error output in a test, you need to use `When I try ...`, because `When I run ...` will assert a successful exit status.
+> **Note:** If you are expecting an error output in a test, you need to use `When I try ...` instead of `When I run ...` .
 
-## Given
+#### Given
 
 * `Given an empty directory` - Creates an empty directory.
 * `Given /^an? (empty|non-existent) ([^\s]+) directory$/` - Creates or deletes a specific directory.
@@ -73,14 +91,14 @@ WP-CLI makes use of a Behat-based testing framework and provides a set of custom
 * `Given a PHP built-in web server` - Start a PHP built-in web server in the current directory.
 * `Given a PHP built-in web server to serve :subdir` - Start a PHP built-in web server in the given subdirectory.
 
-## When
+#### When
 
 * ``When /^I launch in the background `([^`]+)`$/`` - Launch a given command in the background.
 * ``When /^I (run|try) `([^`]+)`$/`` - Run or try a given command.
 * ``When /^I (run|try) `([^`]+)` from '([^\s]+)'$/`` - Run or try a given command in a subdirectory.
 * `When /^I (run|try) the previous command again$/` - Run or try the previous command again.
 
-## Then
+#### Then
 
 * `Then /^the return code should( not)? be (\d+)$/` - Expect a specific exit code of the previous command.
 * `Then /^(STDOUT|STDERR) should( strictly)? (be|contain|not contain):$/` - Check the contents of STDOUT or STDERR.
