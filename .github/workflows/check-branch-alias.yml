@@ -5,6 +5,8 @@ on:
     - cron: '0 2 * * 1' # Run weekly on Monday at 2 AM UTC
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   check-branch-alias:
     uses: wp-cli/.github/.github/workflows/reusable-check-branch-alias.yml@main
