@@ -1,0 +1,122 @@
+name: Check Branch Alias
+
+on:
+  workflow_call:
+  schedule:
+    - cron: '0 2 * * 1' # Run weekly on Monday at 2 AM UTC
+  workflow_dispatch:
+
+# Cancels all previous workflow runs for pull requests that have not completed.
+concurrency:
+  # The concurrency group contains the workflow name and the branch name for pull requests
+  # or the commit hash for any other events.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  check-branch-alias:
+    name: Check and update branch-alias
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'wp-cli' }}
+    
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # Fetch all history for all tags
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check existence of composer.json file
+        id: check_composer_file
+        uses: andstor/file-existence-action@v3
+        with:
+          files: "composer.json"
+
+      - name: Check and update branch alias
+        if: steps.check_composer_file.outputs.files_exists == 'true'
+        id: check_alias
+        run: |
+          # Get the latest release tag
+          LATEST_TAG=$(git tag --list 'v*' --sort=-version:refname | head -n 1)
+          
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No release tags found, skipping branch-alias check"
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          echo "Latest tag: $LATEST_TAG"
+          
+          # Extract version numbers (remove 'v' prefix)
+          VERSION="${LATEST_TAG#v}"
+          
+          # Parse major, minor, and patch versions
+          IFS='.' read -r MAJOR MINOR _ <<< "$VERSION"
+          
+          # Calculate next minor version
+          NEXT_MINOR=$((MINOR + 1))
+          EXPECTED_ALIAS="${MAJOR}.${NEXT_MINOR}.x-dev"
+          
+          echo "Expected branch-alias: $EXPECTED_ALIAS"
+          
+          # Get current branch-alias from composer.json
+          # Check for both dev-main and dev-master
+          CURRENT_ALIAS=$(jq -r '.extra["branch-alias"]["dev-main"] // .extra["branch-alias"]["dev-master"] // empty' composer.json)
+          
+          # Determine which key is being used
+          if jq -e '.extra["branch-alias"]["dev-main"]' composer.json > /dev/null 2>&1; then
+            BRANCH_KEY="dev-main"
+          elif jq -e '.extra["branch-alias"]["dev-master"]' composer.json > /dev/null 2>&1; then
+            BRANCH_KEY="dev-master"
+          else
+            echo "No branch-alias found in composer.json"
+            BRANCH_KEY="dev-main"
+            CURRENT_ALIAS=""
+          fi
+          
+          echo "Current branch-alias ($BRANCH_KEY): $CURRENT_ALIAS"
+          
+          if [ "$CURRENT_ALIAS" != "$EXPECTED_ALIAS" ]; then
+            echo "Branch alias needs update"
+            {
+              echo "needs_update=true"
+              echo "expected_alias=$EXPECTED_ALIAS"
+              echo "current_alias=$CURRENT_ALIAS"
+              echo "branch_key=$BRANCH_KEY"
+              echo "latest_tag=$LATEST_TAG"
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "Branch alias is up to date"
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update composer.json
+        if: steps.check_alias.outputs.needs_update == 'true'
+        run: |
+          BRANCH_KEY="${{ steps.check_alias.outputs.branch_key }}"
+          EXPECTED_ALIAS="${{ steps.check_alias.outputs.expected_alias }}"
+          
+          # Update the branch-alias in composer.json
+          jq --arg key "$BRANCH_KEY" --arg value "$EXPECTED_ALIAS" \
+            '.extra["branch-alias"][$key] = $value' \
+            composer.json > composer.json.tmp && mv composer.json.tmp composer.json
+
+      - name: Create Pull Request
+        if: steps.check_alias.outputs.needs_update == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update branch-alias to ${{ steps.check_alias.outputs.expected_alias }}"
+          title: "Update branch-alias to ${{ steps.check_alias.outputs.expected_alias }}"
+          body: |
+            This PR updates the Composer `branch-alias` configuration to reflect the latest release.
+            
+            - Latest release: ${{ steps.check_alias.outputs.latest_tag }}
+            - Previous branch-alias: `${{ steps.check_alias.outputs.current_alias }}`
+            - Updated branch-alias: `${{ steps.check_alias.outputs.expected_alias }}`
+            
+            The branch-alias should point to the next minor development version after the latest release.
+          branch: update-branch-alias
+          delete-branch: true
+          labels: |
+            automated-pr
