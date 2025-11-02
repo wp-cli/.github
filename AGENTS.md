@@ -86,7 +86,7 @@ WP-CLI makes use of a Behat-based testing framework and provides a set of custom
 * `Given /^save (STDOUT|STDERR) ([\'].+[^\'])?\s?as \{(\w+)\}$/` - Store STDOUT or STDERR contents in a variable.
 * `Given /^a new Phar with (?:the same version|version "([^"]+)")$/` - Build a new WP-CLI Phar file with a given version.
 * `Given /^a downloaded Phar with (?:the same version|version "([^"]+)")$/` - Download a specific WP-CLI Phar version from GitHub.
-* `Given /^save the (.+) file ([\'].+[^\'])?as \{(\w+)\}$/` - Stores the contents of the given file in a variable.
+* `Given /^save the (.+) file ([\'].+[^\'])? as \{(\w+)\}$/` - Stores the contents of the given file in a variable.
 * `Given a misconfigured WP_CONTENT_DIR constant directory` - Modify wp-config.php to set `WP_CONTENT_DIR` to an empty string.
 * `Given a dependency on current wp-cli` - Add `wp-cli/wp-cli` as a Composer dependency.
 * `Given a PHP built-in web server` - Start a PHP built-in web server in the current directory.
