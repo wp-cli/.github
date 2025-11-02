@@ -7,7 +7,7 @@ This package is part of WP-CLI, the official command line interface for WordPres
 When contributing to this package, please adhere to the following guidelines:
 
 * **Follow Existing Conventions:** Before writing any code, analyze the existing codebase in this package to understand the coding style, naming conventions, and architectural patterns.
-* **Focus on the Package's Scope:** All changes should be relevant to the functionality of the `extension-command` package.
+* **Focus on the Package's Scope:** All changes should be relevant to the functionality of the package.
 * **Write Tests:** All new features and bug fixes must be accompanied by acceptance tests using Behat. You can find the existing tests in the `features/` directory. There may be PHPUnit unit tests as well in the `tests/` directory.
 * **Update Documentation:** If your changes affect the user-facing functionality, please update the relevant inline code documentation.
 
