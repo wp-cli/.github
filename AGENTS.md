@@ -110,7 +110,7 @@ WP-CLI makes use of a Behat-based testing framework and provides a set of custom
 * `Then /^STDOUT should be JSON containing:$/` - Expect valid JSON output in STDOUT.
 * `Then /^STDOUT should be a JSON array containing:$/` - Expect valid JSON array output in STDOUT.
 * `Then /^STDOUT should be CSV containing:$/` - Expect STDOUT to be CSV containing certain values.
-* `Then /^STDOUT should be YAML containing:$/` - Expect STDOUT to be YAML containig certain content.
+* `Then /^STDOUT should be YAML containing:$/` - Expect STDOUT to be YAML containing certain content.
 * `Then /^(STDOUT|STDERR) should be empty$/` - Expect STDOUT or STDERR to be empty.
 * `Then /^(STDOUT|STDERR) should not be empty$/` - Expect STDOUT or STDERR not to be empty.
 * `Then /^(STDOUT|STDERR) should be a version string (&lt;|&lt;=|&gt;|&gt;=|==|=|&lt;&gt;) ([+\w.{}-]+)$/` - Expect STDOUT or STDERR to be a version string comparing to the given version.
