@@ -13,7 +13,7 @@ When contributing to this package, please adhere to the following guidelines:
 
 ### Building and running
 
-Before submitting any changes, it is crucial to validate them by running the full suite of static code analysis and tests. Tu run the full suite of checks, execute the following command: `composer test`.
+Before submitting any changes, it is crucial to validate them by running the full suite of static code analysis and tests. To run the full suite of checks, execute the following command: `composer test`.
 
 This single command ensures that your changes meet all the quality gates of the project. While you can run the individual steps separately, it is highly recommended to use this single command to ensure a comprehensive validation.
 
