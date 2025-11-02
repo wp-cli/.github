@@ -56,6 +56,7 @@ When writing tests, aim to follow existing patterns. Key conventions include:
 
 * When adding tests, first examine existing tests to understand and conform to established conventions.
 * For unit tests, extend the base `WP_CLI\Tests\TestCase` test class.
+* For Behat tests, only WP-CLI commands installed in `composer.json` can be run.
 
 ### Behat Steps
 
