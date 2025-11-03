@@ -3,7 +3,7 @@ name: Check Branch Alias
 on:
   workflow_call:
   release:
-    types: [published]
+    types: [released]
   workflow_dispatch:
 
 # Cancels all previous workflow runs for pull requests that have not completed.
