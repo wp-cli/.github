@@ -11,6 +11,10 @@ name: Issue Triage
         required: false
         default: 'true'
         type: boolean
+      issue_number:
+        description: 'Issue number to triage (leave empty to process all)'
+        required: false
+        type: string
 
 permissions:
   issues: write
@@ -86,11 +90,6 @@ jobs:
             ${{ env.ISSUE_BODY }}
             ```
 
-            **Output File Path**:
-            ```
-            ${{ env.GITHUB_ENV }}
-            ```
-
             ## Steps
 
             1. Review the issue title, issue body, and available labels
@@ -100,24 +99,26 @@ jobs:
                and choose all appropriate labels from the list of available
                labels.
 
-            3. Output the selected labels as a comma-separated list to the
-               file at the path specified in "Output File Path" using the
-               following format:
+            3. Return only the selected labels as a comma-separated list,
+               with no additional text or explanation. For example:
                ```
-               SELECTED_LABELS=label1,label2,label3
+               label1, label2, label3
                ```
 
       - name: Apply labels
+        if: steps.ai-triage.outputs.response != ''
         uses: actions/github-script@v7
+        env:
+          AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
         with:
           script: |
-            const selectedLabels = process.env.SELECTED_LABELS;
-            if (!selectedLabels || selectedLabels.trim() === '') {
+            const response = process.env.AI_RESPONSE;
+            if (!response || response.trim() === '') {
               console.log('No labels selected by AI');
               return;
             }
 
-            const labels = selectedLabels.split(',')
+            const labels = response.split(',')
               .map(l => l.trim())
               .filter(l => l.length > 0);
 
@@ -135,28 +136,15 @@ jobs:
 
   triage-unlabeled-issues:
     name: Triage Unlabeled Issues
-    if: github.event_name == 'workflow_dispatch'
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.issue_number == ''
     runs-on: ubuntu-latest
     steps:
-      - name: Get available labels
-        id: get-labels
+      - name: Find and dispatch triage for unlabeled issues
         uses: actions/github-script@v7
         with:
           script: |
-            const labels = await github.rest.issues.listLabelsForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 100
-            });
-            const labelNames = labels.data.map(label => label.name);
-            return labelNames.join(', ');
-
-      - name: Find and triage unlabeled issues
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const availableLabels = ${{ steps.get-labels.outputs.result }};
-
             // Get all open issues
             const issues = await github.paginate(
               github.rest.issues.listForRepo,
@@ -184,16 +172,166 @@ jobs:
               return;
             }
 
-            // For manual dispatch, we'll log that AI triage is not yet
-            // implemented for batch processing
-            console.log(
-              'Note: Batch AI triage for unlabeled issues requires ' +
-              'manual triggering of individual issue workflows or ' +
-              'implementing batch AI processing in the future.'
-            );
-
+            // Dispatch triage workflow for each unlabeled issue
             for (const issue of unlabeledIssues) {
               console.log(
-                `Issue #${issue.number}: "${issue.title}" needs triage`
+                `Dispatching triage for issue #${issue.number}: ` +
+                `"${issue.title}"`
               );
+
+              try {
+                await github.rest.actions.createWorkflowDispatch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: 'issue-triage.yml',
+                  ref: context.ref || 'main',
+                  inputs: {
+                    process_unlabeled: 'false',
+                    issue_number: issue.number.toString()
+                  }
+                });
+              } catch (error) {
+                console.error(
+                  `Failed to dispatch triage for issue #${issue.number}: ` +
+                  `${error.message}`
+                );
+              }
+
+              // Add a small delay to avoid rate limiting
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            console.log('Finished dispatching triage workflows');
+
+  triage-single-issue:
+    name: Triage Single Issue
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.issue_number != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get available labels
+        id: get-labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = await github.rest.issues.listLabelsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            const labelNames = labels.data.map(label => label.name);
+            return labelNames.join(', ');
+
+      - name: Get issue details
+        id: get-issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: parseInt('${{ github.event.inputs.issue_number }}')
+            });
+            return {
+              title: issue.data.title,
+              body: issue.data.body || ''
+            };
+
+      - name: Set environment variables
+        env:
+          ISSUE_TITLE: ${{ fromJSON(steps.get-issue.outputs.result).title }}
+          ISSUE_BODY: ${{ fromJSON(steps.get-issue.outputs.result).body }}
+          LABELS_RESULT: ${{ steps.get-labels.outputs.result }}
+        run: |
+          {
+            echo "AVAILABLE_LABELS=${LABELS_RESULT}"
+            echo "ISSUE_TITLE=${ISSUE_TITLE}"
+            echo "ISSUE_BODY<<EOF"
+            echo "${ISSUE_BODY}"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+
+      - name: Analyze issue with AI
+        id: ai-triage
+        uses: actions/ai-inference@v1
+        with:
+          prompt: |
+            ## Role
+
+            You are an issue triage assistant. Analyze the current GitHub
+            issue and identify the most appropriate existing labels. Use the
+            available tools to gather information; do not ask for information
+            to be provided.
+
+            ## Guidelines
+
+            - Only use labels that are from the list of available labels.
+            - You can choose multiple labels to apply.
+            - When generating shell commands, you **MUST NOT** use command
+              substitution with `$(...)`, `<(...)`, or `>(...)`. This is a
+              security measure to prevent unintended command execution.
+
+            ## Input Data
+
+            **Available Labels** (comma-separated):
+            ```
+            ${{ env.AVAILABLE_LABELS }}
+            ```
+
+            **Issue Title**:
+            ```
+            ${{ env.ISSUE_TITLE }}
+            ```
+
+            **Issue Body**:
+            ```
+            ${{ env.ISSUE_BODY }}
+            ```
+
+            ## Steps
+
+            1. Review the issue title, issue body, and available labels
+               provided above.
+
+            2. Based on the issue title and issue body, classify the issue
+               and choose all appropriate labels from the list of available
+               labels.
+
+            3. Return only the selected labels as a comma-separated list,
+               with no additional text or explanation. For example:
+               ```
+               label1, label2, label3
+               ```
+
+      - name: Apply labels
+        if: steps.ai-triage.outputs.response != ''
+        uses: actions/github-script@v7
+        env:
+          AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
+          ISSUE_NUMBER: ${{ github.event.inputs.issue_number }}
+        with:
+          script: |
+            const response = process.env.AI_RESPONSE;
+            const issueNumber = parseInt(process.env.ISSUE_NUMBER);
+
+            if (!response || response.trim() === '') {
+              console.log('No labels selected by AI');
+              return;
+            }
+
+            const labels = response.split(',')
+              .map(l => l.trim())
+              .filter(l => l.length > 0);
+
+            if (labels.length > 0) {
+              console.log(`Applying labels: ${labels.join(', ')}`);
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                labels: labels
+              });
+            } else {
+              console.log('No valid labels to apply');
             }
