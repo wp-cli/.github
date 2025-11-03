@@ -26,44 +26,52 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            // Function to determine labels based on content
+            function determineLabels(title, body) {
+              const content = (title + ' ' + body).toLowerCase();
+              const labels = [];
+
+              // Check if it matches bug report patterns
+              if (content.includes('bug report') ||
+                  content.includes('buggy behavior') ||
+                  content.includes('error') ||
+                  content.includes('broken') ||
+                  content.includes('not working') ||
+                  content.includes('fails to') ||
+                  content.includes('crash') ||
+                  content.includes('problem')) {
+                labels.push('i: bug');
+              }
+
+              // Check if it matches feature request patterns
+              if (content.includes('feature request') ||
+                  content.includes('enhancement') ||
+                  content.includes('suggestion') ||
+                  content.includes('would like') ||
+                  content.includes('could you') ||
+                  content.includes('add support for') ||
+                  content.includes('it would be nice')) {
+                labels.push('i: enhancement');
+              }
+
+              // Check if it matches support request patterns
+              if (content.includes('support request') ||
+                  content.includes('how to') ||
+                  content.includes('question') ||
+                  content.includes('help needed') ||
+                  (content.includes('how do') &&
+                   content.includes('?'))) {
+                labels.push('i: state:unsupported');
+              }
+
+              return labels;
+            }
+
             const issue = context.payload.issue;
             const issueBody = issue.body || '';
             const issueTitle = issue.title || '';
-            const content = (issueTitle + ' ' + issueBody).toLowerCase();
 
-            // Determine appropriate labels based on content analysis
-            const labels = [];
-
-            // Check if it matches bug report patterns
-            if (content.includes('bug report') ||
-                content.includes('buggy behavior') ||
-                content.includes('error') ||
-                content.includes('broken') ||
-                content.includes('not working') ||
-                content.includes('issue') ||
-                content.includes('problem')) {
-              labels.push('i: bug');
-            }
-
-            // Check if it matches feature request patterns
-            if (content.includes('feature request') ||
-                content.includes('enhancement') ||
-                content.includes('suggestion') ||
-                content.includes('would like') ||
-                content.includes('could you') ||
-                content.includes('add support for')) {
-              labels.push('i: enhancement');
-            }
-
-            // Check if it matches support request patterns
-            if (content.includes('support request') ||
-                content.includes('how to') ||
-                content.includes('question') ||
-                content.includes('help needed') ||
-                (content.includes('how do') &&
-                 content.includes('?'))) {
-              labels.push('i: state:unsupported');
-            }
+            const labels = determineLabels(issueTitle, issueBody);
 
             // Apply labels if any were determined
             if (labels.length > 0) {
@@ -89,6 +97,47 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            // Function to determine labels based on content
+            function determineLabels(title, body) {
+              const content = (title + ' ' + body).toLowerCase();
+              const labels = [];
+
+              // Check if it matches bug report patterns
+              if (content.includes('bug report') ||
+                  content.includes('buggy behavior') ||
+                  content.includes('error') ||
+                  content.includes('broken') ||
+                  content.includes('not working') ||
+                  content.includes('fails to') ||
+                  content.includes('crash') ||
+                  content.includes('problem')) {
+                labels.push('i: bug');
+              }
+
+              // Check if it matches feature request patterns
+              if (content.includes('feature request') ||
+                  content.includes('enhancement') ||
+                  content.includes('suggestion') ||
+                  content.includes('would like') ||
+                  content.includes('could you') ||
+                  content.includes('add support for') ||
+                  content.includes('it would be nice')) {
+                labels.push('i: enhancement');
+              }
+
+              // Check if it matches support request patterns
+              if (content.includes('support request') ||
+                  content.includes('how to') ||
+                  content.includes('question') ||
+                  content.includes('help needed') ||
+                  (content.includes('how do') &&
+                   content.includes('?'))) {
+                labels.push('i: state:unsupported');
+              }
+
+              return labels;
+            }
+
             // Get all open issues
             const issues = await github.paginate(
               github.rest.issues.listForRepo,
@@ -115,42 +164,8 @@ jobs:
             for (const issue of unlabeledIssues) {
               const issueBody = issue.body || '';
               const issueTitle = issue.title || '';
-              const content = (
-                issueTitle + ' ' + issueBody
-              ).toLowerCase();
 
-              const labels = [];
-
-              // Check if it matches bug report patterns
-              if (content.includes('bug report') ||
-                  content.includes('buggy behavior') ||
-                  content.includes('error') ||
-                  content.includes('broken') ||
-                  content.includes('not working') ||
-                  content.includes('issue') ||
-                  content.includes('problem')) {
-                labels.push('i: bug');
-              }
-
-              // Check if it matches feature request patterns
-              if (content.includes('feature request') ||
-                  content.includes('enhancement') ||
-                  content.includes('suggestion') ||
-                  content.includes('would like') ||
-                  content.includes('could you') ||
-                  content.includes('add support for')) {
-                labels.push('i: enhancement');
-              }
-
-              // Check if it matches support request patterns
-              if (content.includes('support request') ||
-                  content.includes('how to') ||
-                  content.includes('question') ||
-                  content.includes('help needed') ||
-                  (content.includes('how do') &&
-                   content.includes('?'))) {
-                labels.push('i: state:unsupported');
-              }
+              const labels = determineLabels(issueTitle, issueBody);
 
               // Apply labels if any were determined
               if (labels.length > 0) {
