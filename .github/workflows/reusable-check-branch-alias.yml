@@ -2,8 +2,8 @@ name: Check Branch Alias
 
 on:
   workflow_call:
-  schedule:
-    - cron: '0 2 * * 1' # Run weekly on Monday at 2 AM UTC
+  release:
+    types: [published]
   workflow_dispatch:
 
 # Cancels all previous workflow runs for pull requests that have not completed.
@@ -31,6 +31,12 @@ jobs:
         with:
           fetch-depth: 0 # Fetch all history for all tags
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 'latest'
+          tools: composer
 
       - name: Check existence of composer.json file
         id: check_composer_file
@@ -75,17 +81,20 @@ jobs:
           
           echo "Expected branch-alias: $EXPECTED_ALIAS"
           
-          # Get current branch-alias from composer.json
-          # Check for both dev-main and dev-master
-          CURRENT_ALIAS=$(jq -r '.extra["branch-alias"]["dev-main"] // .extra["branch-alias"]["dev-master"] // empty' composer.json)
+          # Determine which branch key is being used (dev-main or dev-master)
+          BRANCH_KEY=""
+          CURRENT_ALIAS=""
           
-          # Determine which key is being used
-          if jq -e '.extra["branch-alias"]["dev-main"]' composer.json > /dev/null 2>&1; then
+          # Try dev-main first
+          if composer config extra.branch-alias.dev-main > /dev/null 2>&1; then
             BRANCH_KEY="dev-main"
-          elif jq -e '.extra["branch-alias"]["dev-master"]' composer.json > /dev/null 2>&1; then
+            CURRENT_ALIAS=$(composer config extra.branch-alias.dev-main)
+          # Try dev-master if dev-main doesn't exist
+          elif composer config extra.branch-alias.dev-master > /dev/null 2>&1; then
             BRANCH_KEY="dev-master"
+            CURRENT_ALIAS=$(composer config extra.branch-alias.dev-master)
           else
-            echo "No branch-alias found in composer.json"
+            echo "No branch-alias found in composer.json, will use dev-main"
             BRANCH_KEY="dev-main"
             CURRENT_ALIAS=""
           fi
@@ -112,10 +121,8 @@ jobs:
           BRANCH_KEY="${{ steps.check_alias.outputs.branch_key }}"
           EXPECTED_ALIAS="${{ steps.check_alias.outputs.expected_alias }}"
           
-          # Update the branch-alias in composer.json, ensuring the structure exists
-          jq --arg key "$BRANCH_KEY" --arg value "$EXPECTED_ALIAS" \
-            '.extra."branch-alias" //= {} | .extra."branch-alias"[$key] = $value' \
-            composer.json > composer.json.tmp && mv composer.json.tmp composer.json
+          # Update the branch-alias using composer command
+          composer config "extra.branch-alias.$BRANCH_KEY" "$EXPECTED_ALIAS"
 
       - name: Create Pull Request
         if: steps.check_alias.outputs.needs_update == 'true'

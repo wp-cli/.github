@@ -1,8 +1,8 @@
 name: Check Branch Alias
 
 on:
-  schedule:
-    - cron: '0 2 * * 1' # Run weekly on Monday at 2 AM UTC
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions: {}
