@@ -22,70 +22,115 @@ jobs:
     if: github.event_name == 'issues'
     runs-on: ubuntu-latest
     steps:
-      - name: Analyze issue and apply labels
+      - name: Get available labels
+        id: get-labels
         uses: actions/github-script@v7
         with:
           script: |
-            // Function to determine labels based on content
-            function determineLabels(title, body) {
-              const content = (title + ' ' + body).toLowerCase();
-              const labels = [];
+            const labels = await github.rest.issues.listLabelsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            const labelNames = labels.data.map(label => label.name);
+            return labelNames.join(', ');
 
-              // Check if it matches bug report patterns
-              if (content.includes('bug report') ||
-                  content.includes('buggy behavior') ||
-                  content.includes('error') ||
-                  content.includes('broken') ||
-                  content.includes('not working') ||
-                  content.includes('fails to') ||
-                  content.includes('crash') ||
-                  content.includes('problem')) {
-                labels.push('i: bug');
-              }
+      - name: Set environment variables
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          LABELS_RESULT: ${{ steps.get-labels.outputs.result }}
+        run: |
+          {
+            echo "AVAILABLE_LABELS=${LABELS_RESULT}"
+            echo "ISSUE_TITLE=${ISSUE_TITLE}"
+            echo "ISSUE_BODY<<EOF"
+            echo "${ISSUE_BODY}"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
 
-              // Check if it matches feature request patterns
-              if (content.includes('feature request') ||
-                  content.includes('enhancement') ||
-                  content.includes('suggestion') ||
-                  content.includes('would like') ||
-                  content.includes('could you') ||
-                  content.includes('add support for') ||
-                  content.includes('it would be nice')) {
-                labels.push('i: enhancement');
-              }
+      - name: Analyze issue with AI
+        id: ai-triage
+        uses: actions/ai-inference@v1
+        with:
+          prompt: |
+            ## Role
 
-              // Check if it matches support request patterns
-              if (content.includes('support request') ||
-                  content.includes('how to') ||
-                  content.includes('question') ||
-                  content.includes('help needed') ||
-                  (content.includes('how do') &&
-                   content.includes('?'))) {
-                labels.push('i: state:unsupported');
-              }
+            You are an issue triage assistant. Analyze the current GitHub
+            issue and identify the most appropriate existing labels. Use the
+            available tools to gather information; do not ask for information
+            to be provided.
 
-              return labels;
+            ## Guidelines
+
+            - Only use labels that are from the list of available labels.
+            - You can choose multiple labels to apply.
+            - When generating shell commands, you **MUST NOT** use command
+              substitution with `$(...)`, `<(...)`, or `>(...)`. This is a
+              security measure to prevent unintended command execution.
+
+            ## Input Data
+
+            **Available Labels** (comma-separated):
+            ```
+            ${{ env.AVAILABLE_LABELS }}
+            ```
+
+            **Issue Title**:
+            ```
+            ${{ env.ISSUE_TITLE }}
+            ```
+
+            **Issue Body**:
+            ```
+            ${{ env.ISSUE_BODY }}
+            ```
+
+            **Output File Path**:
+            ```
+            ${{ env.GITHUB_ENV }}
+            ```
+
+            ## Steps
+
+            1. Review the issue title, issue body, and available labels
+               provided above.
+
+            2. Based on the issue title and issue body, classify the issue
+               and choose all appropriate labels from the list of available
+               labels.
+
+            3. Output the selected labels as a comma-separated list to the
+               file at the path specified in "Output File Path" using the
+               following format:
+               ```
+               SELECTED_LABELS=label1,label2,label3
+               ```
+
+      - name: Apply labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const selectedLabels = process.env.SELECTED_LABELS;
+            if (!selectedLabels || selectedLabels.trim() === '') {
+              console.log('No labels selected by AI');
+              return;
             }
 
-            const issue = context.payload.issue;
-            const issueBody = issue.body || '';
-            const issueTitle = issue.title || '';
+            const labels = selectedLabels.split(',')
+              .map(l => l.trim())
+              .filter(l => l.length > 0);
 
-            const labels = determineLabels(issueTitle, issueBody);
-
-            // Apply labels if any were determined
             if (labels.length > 0) {
               console.log(`Applying labels: ${labels.join(', ')}`);
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: issue.number,
+                issue_number: context.issue.number,
                 labels: labels
               });
             } else {
-              console.log(
-                'No appropriate labels determined for this issue'
-              );
+              console.log('No valid labels to apply');
             }
 
   triage-unlabeled-issues:
@@ -93,50 +138,24 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - name: Find and label unlabeled issues
+      - name: Get available labels
+        id: get-labels
         uses: actions/github-script@v7
         with:
           script: |
-            // Function to determine labels based on content
-            function determineLabels(title, body) {
-              const content = (title + ' ' + body).toLowerCase();
-              const labels = [];
+            const labels = await github.rest.issues.listLabelsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            const labelNames = labels.data.map(label => label.name);
+            return labelNames.join(', ');
 
-              // Check if it matches bug report patterns
-              if (content.includes('bug report') ||
-                  content.includes('buggy behavior') ||
-                  content.includes('error') ||
-                  content.includes('broken') ||
-                  content.includes('not working') ||
-                  content.includes('fails to') ||
-                  content.includes('crash') ||
-                  content.includes('problem')) {
-                labels.push('i: bug');
-              }
-
-              // Check if it matches feature request patterns
-              if (content.includes('feature request') ||
-                  content.includes('enhancement') ||
-                  content.includes('suggestion') ||
-                  content.includes('would like') ||
-                  content.includes('could you') ||
-                  content.includes('add support for') ||
-                  content.includes('it would be nice')) {
-                labels.push('i: enhancement');
-              }
-
-              // Check if it matches support request patterns
-              if (content.includes('support request') ||
-                  content.includes('how to') ||
-                  content.includes('question') ||
-                  content.includes('help needed') ||
-                  (content.includes('how do') &&
-                   content.includes('?'))) {
-                labels.push('i: state:unsupported');
-              }
-
-              return labels;
-            }
+      - name: Find and triage unlabeled issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const availableLabels = ${{ steps.get-labels.outputs.result }};
 
             // Get all open issues
             const issues = await github.paginate(
@@ -160,41 +179,21 @@ jobs:
               `Found ${unlabeledIssues.length} unlabeled issues`
             );
 
-            // Process each unlabeled issue
-            for (const issue of unlabeledIssues) {
-              const issueBody = issue.body || '';
-              const issueTitle = issue.title || '';
-
-              const labels = determineLabels(issueTitle, issueBody);
-
-              // Apply labels if any were determined
-              if (labels.length > 0) {
-                const labelList = labels.join(', ');
-                console.log(
-                  `Issue #${issue.number}: Applying labels: ${labelList}`
-                );
-                try {
-                  await github.rest.issues.addLabels({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: issue.number,
-                    labels: labels
-                  });
-                } catch (error) {
-                  console.error(
-                    `Failed to label issue #${issue.number}: ` +
-                    `${error.message}`
-                  );
-                }
-              } else {
-                console.log(
-                  `Issue #${issue.number}: ` +
-                  `No appropriate labels determined`
-                );
-              }
-
-              // Add a small delay to avoid rate limiting
-              await new Promise(resolve => setTimeout(resolve, 100));
+            if (unlabeledIssues.length === 0) {
+              console.log('No unlabeled issues to process');
+              return;
             }
 
-            console.log('Finished processing unlabeled issues');
+            // For manual dispatch, we'll log that AI triage is not yet
+            // implemented for batch processing
+            console.log(
+              'Note: Batch AI triage for unlabeled issues requires ' +
+              'manual triggering of individual issue workflows or ' +
+              'implementing batch AI processing in the future.'
+            );
+
+            for (const issue of unlabeledIssues) {
+              console.log(
+                `Issue #${issue.number}: "${issue.title}" needs triage`
+              );
+            }
