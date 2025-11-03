@@ -15,4 +15,4 @@ jobs:
   issue-triage:
     uses: wp-cli/.github/.github/workflows/reusable-issue-triage.yml@main
     with:
-      issue_number: ${{ inputs.issue_number }}
+      issue_number: ${{ github.event_name == 'workflow_dispatch' && inputs.issue_number || github.event.issue.number }}
