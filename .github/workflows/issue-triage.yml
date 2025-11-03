@@ -1,0 +1,185 @@
+---
+name: Issue Triage
+
+'on':
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      process_unlabeled:
+        description: 'Process all open issues without labels'
+        required: false
+        default: 'true'
+        type: boolean
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  triage-new-issue:
+    name: Triage New Issue
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Analyze issue and apply labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const issueBody = issue.body || '';
+            const issueTitle = issue.title || '';
+            const content = (issueTitle + ' ' + issueBody).toLowerCase();
+
+            // Determine appropriate labels based on content analysis
+            const labels = [];
+
+            // Check if it matches bug report patterns
+            if (content.includes('bug report') ||
+                content.includes('buggy behavior') ||
+                content.includes('error') ||
+                content.includes('broken') ||
+                content.includes('not working') ||
+                content.includes('issue') ||
+                content.includes('problem')) {
+              labels.push('i: bug');
+            }
+
+            // Check if it matches feature request patterns
+            if (content.includes('feature request') ||
+                content.includes('enhancement') ||
+                content.includes('suggestion') ||
+                content.includes('would like') ||
+                content.includes('could you') ||
+                content.includes('add support for')) {
+              labels.push('i: enhancement');
+            }
+
+            // Check if it matches support request patterns
+            if (content.includes('support request') ||
+                content.includes('how to') ||
+                content.includes('question') ||
+                content.includes('help needed') ||
+                (content.includes('how do') &&
+                 content.includes('?'))) {
+              labels.push('i: state:unsupported');
+            }
+
+            // Apply labels if any were determined
+            if (labels.length > 0) {
+              console.log(`Applying labels: ${labels.join(', ')}`);
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labels
+              });
+            } else {
+              console.log(
+                'No appropriate labels determined for this issue'
+              );
+            }
+
+  triage-unlabeled-issues:
+    name: Triage Unlabeled Issues
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find and label unlabeled issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Get all open issues
+            const issues = await github.paginate(
+              github.rest.issues.listForRepo,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                per_page: 100
+              }
+            );
+
+            console.log(`Found ${issues.length} open issues`);
+
+            // Filter issues without labels
+            const unlabeledIssues = issues.filter(issue =>
+              !issue.pull_request && issue.labels.length === 0
+            );
+
+            console.log(
+              `Found ${unlabeledIssues.length} unlabeled issues`
+            );
+
+            // Process each unlabeled issue
+            for (const issue of unlabeledIssues) {
+              const issueBody = issue.body || '';
+              const issueTitle = issue.title || '';
+              const content = (
+                issueTitle + ' ' + issueBody
+              ).toLowerCase();
+
+              const labels = [];
+
+              // Check if it matches bug report patterns
+              if (content.includes('bug report') ||
+                  content.includes('buggy behavior') ||
+                  content.includes('error') ||
+                  content.includes('broken') ||
+                  content.includes('not working') ||
+                  content.includes('issue') ||
+                  content.includes('problem')) {
+                labels.push('i: bug');
+              }
+
+              // Check if it matches feature request patterns
+              if (content.includes('feature request') ||
+                  content.includes('enhancement') ||
+                  content.includes('suggestion') ||
+                  content.includes('would like') ||
+                  content.includes('could you') ||
+                  content.includes('add support for')) {
+                labels.push('i: enhancement');
+              }
+
+              // Check if it matches support request patterns
+              if (content.includes('support request') ||
+                  content.includes('how to') ||
+                  content.includes('question') ||
+                  content.includes('help needed') ||
+                  (content.includes('how do') &&
+                   content.includes('?'))) {
+                labels.push('i: state:unsupported');
+              }
+
+              // Apply labels if any were determined
+              if (labels.length > 0) {
+                const labelList = labels.join(', ');
+                console.log(
+                  `Issue #${issue.number}: Applying labels: ${labelList}`
+                );
+                try {
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    labels: labels
+                  });
+                } catch (error) {
+                  console.error(
+                    `Failed to label issue #${issue.number}: ` +
+                    `${error.message}`
+                  );
+                }
+              } else {
+                console.log(
+                  `Issue #${issue.number}: ` +
+                  `No appropriate labels determined`
+                );
+              }
+
+              // Add a small delay to avoid rate limiting
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            console.log('Finished processing unlabeled issues');
