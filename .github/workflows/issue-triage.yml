@@ -6,11 +6,6 @@ name: Issue Triage
     types: [opened]
   workflow_dispatch:
     inputs:
-      process_unlabeled:
-        description: 'Process all open issues without labels'
-        required: false
-        default: 'true'
-        type: boolean
       issue_number:
         description: 'Issue number to triage (leave empty to process all)'
         required: false

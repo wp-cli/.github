@@ -179,7 +179,6 @@ jobs:
                   workflow_id: 'issue-triage.yml',
                   ref: context.ref || 'main',
                   inputs: {
-                    process_unlabeled: 'false',
                     issue_number: issue.number.toString()
                   }
                 });
