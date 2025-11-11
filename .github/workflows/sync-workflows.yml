@@ -25,6 +25,7 @@ jobs:
             ^.github/workflows/code-quality.yml
             ^.github/workflows/regenerate-readme.yml
             ^.github/workflows/check-branch-alias.yml
+            ^AGENTS.md
           TARGET_REPOS: |
             wp-cli/admin-command
             wp-cli/cache-command
