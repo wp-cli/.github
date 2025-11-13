@@ -10,6 +10,10 @@ name: Manage Labels
     paths:
       - 'composer.json'
 
+permissions:
+  issues: write
+  contents: read
+
 jobs:
   manage-labels:
     uses: wp-cli/.github/.github/workflows/reusable-manage-labels.yml@main
