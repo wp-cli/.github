@@ -23,6 +23,7 @@ jobs:
             ^.actrc
             ^.editorconfig
             ^.github/workflows/code-quality.yml
+            ^.github/workflows/copilot-setup-steps.yml
             ^.github/workflows/regenerate-readme.yml
             ^AGENTS.md
           TARGET_REPOS: |
