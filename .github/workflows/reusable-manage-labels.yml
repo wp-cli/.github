@@ -1,0 +1,126 @@
+---
+name: Manage Repository Labels
+
+'on':
+  workflow_call:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  manage-labels:
+    name: Create/Update Repository Labels
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'wp-cli' }}
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v5
+
+      - name: Set up PHP environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 'latest'
+        env:
+          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check existence of composer.json file
+        id: check_composer_file
+        uses: andstor/file-existence-action@v3
+        with:
+          files: "composer.json"
+
+      - name: Get commands from composer.json
+        id: get-commands
+        if: steps.check_composer_file.outputs.files_exists == 'true'
+        run: |
+          # Extract commands from composer.json using composer config
+          COMMANDS=$(composer config extra.commands 2>/dev/null || echo "[]")
+          echo "commands=${COMMANDS}" >> "$GITHUB_OUTPUT"
+          echo "Commands found: ${COMMANDS}"
+
+      - name: Create/Update labels
+        uses: actions/github-script@v7
+        env:
+          COMMANDS_JSON: ${{ steps.get-commands.outputs.commands }}
+        with:
+          script: |
+            // Standard labels that should exist in every repository
+            const standardLabels = [
+              { name: 'good-first-issue', color: '7057ff', description: 'Good for newcomers' },
+              { name: 'help-wanted', color: '008672', description: 'Extra attention is needed' },
+              { name: 'scope:documentation', color: 'FEF2C0', description: 'Related to documentation' },
+              { name: 'scope:testing', color: 'FEF2C0', description: 'Related to testing' }
+            ];
+
+            // Parse commands from composer.json
+            const commandsEnv = process.env.COMMANDS_JSON || '[]';
+            let commands = [];
+            
+            try {
+              commands = JSON.parse(commandsEnv);
+              if (!Array.isArray(commands)) {
+                commands = [];
+              }
+            } catch (e) {
+              console.log('No commands found or invalid JSON format');
+              commands = [];
+            }
+
+            // Generate command-specific labels
+            const commandLabels = commands.map(command => {
+              // Convert command to label format: replace spaces with dashes
+              const labelName = 'command:' + command.replace(/\s+/g, '-');
+              return {
+                name: labelName,
+                color: 'D4C5F9',
+                description: `Related to '${command}' command`
+              };
+            });
+
+            // Combine all labels
+            const allLabels = [...standardLabels, ...commandLabels];
+
+            console.log(`Creating/updating ${allLabels.length} labels...`);
+
+            // Create or update each label
+            for (const label of allLabels) {
+              try {
+                // Try to get existing label
+                try {
+                  const existing = await github.rest.issues.getLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name
+                  });
+                  
+                  // Update if it exists
+                  await github.rest.issues.updateLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name,
+                    color: label.color,
+                    description: label.description
+                  });
+                  console.log(`✓ Updated label: ${label.name}`);
+                } catch (error) {
+                  if (error.status === 404) {
+                    // Create if it doesn't exist
+                    await github.rest.issues.createLabel({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      name: label.name,
+                      color: label.color,
+                      description: label.description
+                    });
+                    console.log(`✓ Created label: ${label.name}`);
+                  } else {
+                    throw error;
+                  }
+                }
+              } catch (error) {
+                console.error(`✗ Failed to process label '${label.name}': ${error.message}`);
+              }
+            }
+
+            console.log('Label management complete!');

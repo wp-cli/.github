@@ -24,6 +24,7 @@ jobs:
             ^.editorconfig
             ^.github/workflows/code-quality.yml
             ^.github/workflows/regenerate-readme.yml
+            ^.github/workflows/manage-labels.yml
             ^AGENTS.md
           TARGET_REPOS: |
             wp-cli/admin-command
