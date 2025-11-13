@@ -1,0 +1,33 @@
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up PHP environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 'latest'
+          ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
+          coverage: 'none'
+          tools: composer,cs2pr
+        env:
+          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Composer dependencies & cache dependencies
+        uses: ramsey/composer-install@v3
