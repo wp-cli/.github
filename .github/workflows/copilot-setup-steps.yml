@@ -31,3 +31,8 @@ jobs:
 
       - name: Install Composer dependencies & cache dependencies
         uses: ramsey/composer-install@v3
+        env:
+          COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
+        with:
+          # Bust the cache at least once a month - output format: YYYY-MM.
+          custom-cache-suffix: $(date -u "+%Y-%m")
