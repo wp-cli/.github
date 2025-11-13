@@ -73,7 +73,7 @@ jobs:
               const labelName = 'command:' + command.replace(/\s+/g, '-');
               return {
                 name: labelName,
-                color: 'D4C5F9',
+                color: 'C5DEF5',
                 description: `Related to '${command}' command`
               };
             });
