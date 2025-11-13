@@ -88,7 +88,7 @@ jobs:
               try {
                 // Try to get existing label
                 try {
-                  const existing = await github.rest.issues.getLabel({
+                  await github.rest.issues.getLabel({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
                     name: label.name
