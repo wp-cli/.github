@@ -1,0 +1,19 @@
+name: Welcome New Contributors
+
+on:
+  workflow_call:
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: First Interaction
+        uses: actions/first-interaction@v3
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          pr_message: |
+            Hello! 👋
+
+            Thanks for opening this pull request! Please check out our [contributing guidelines](https://make.wordpress.org/cli/handbook/contributions/contributing/). We appreciate you taking the initiative to contribute to this project.
+
+            Contributing isn't limited to just code. We encourage you to contribute in the way that best fits your abilities, by writing tutorials, giving a demo at your local meetup, helping other users with their support questions, or revising our documentation.
