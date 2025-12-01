@@ -80,6 +80,7 @@ jobs:
             ^.github/dependabot.yml
           TARGET_REPOS: |
             wp-cli/admin-command
+            wp-cli/automated-tests
             wp-cli/cache-command
             wp-cli/checksum-command
             wp-cli/config-command
@@ -95,6 +96,7 @@ jobs:
             wp-cli/extension-command
             wp-cli/find-command
             wp-cli/google-sitemap-generator-cli
+            wp-cli/handbook
             wp-cli/i18n-command
             wp-cli/import-command
             wp-cli/language-command
