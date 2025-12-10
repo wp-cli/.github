@@ -79,8 +79,10 @@ jobs:
           FILE_PATTERNS: |
             ^.github/dependabot.yml
           TARGET_REPOS: |
+            wp-cli/ability-command
             wp-cli/admin-command
             wp-cli/automated-tests
+            wp-cli/block-command
             wp-cli/cache-command
             wp-cli/checksum-command
             wp-cli/config-command
