@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Add problem matcher
         run: |
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Check existence of composer.json file
         id: check_composer_file
@@ -100,7 +100,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup node
         uses: actions/setup-node@v6
@@ -116,7 +116,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Check existence of config file
         id: check_files
@@ -126,7 +126,7 @@ jobs:
 
       - name: Check spelling
         if: steps.check_files.outputs.files_exists == 'true'
-        uses: crate-ci/typos@v1.39.1
+        uses: crate-ci/typos@v1.40.0
 
   phpcs: #----------------------------------------------------------------------
     name: PHPCS
@@ -134,7 +134,7 @@ jobs:
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Check existence of composer.json & phpcs.xml.dist files
         id: check_files
@@ -183,7 +183,7 @@ jobs:
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Check existence of composer.json & phpcs.xml.dist files
         id: check_files
