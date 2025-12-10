@@ -50,7 +50,10 @@ jobs:
               { name: 'good-first-issue', color: '7057ff', description: 'Good for newcomers' },
               { name: 'help-wanted', color: '008672', description: 'Extra attention is needed' },
               { name: 'scope:documentation', color: 'FEF2C0', description: 'Related to documentation' },
-              { name: 'scope:testing', color: 'FEF2C0', description: 'Related to testing' }
+              { name: 'scope:testing', color: 'FEF2C0', description: 'Related to testing' },
+              { name: 'scope:distribution', color: '5B7E7E', description: 'Related to distribution' },
+              { name: 'status:unconfirmed', color: 'BFE5BF', description: 'Issue was could not be confirmed yet' },
+              { name: 'status:unsupported', color: 'BFE5BF', description: 'Ask is not supported' }
             ];
 
             // Parse commands from composer.json
