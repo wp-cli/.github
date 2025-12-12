@@ -22,12 +22,15 @@ jobs:
           FILE_PATTERNS: |
             ^.actrc
             ^.editorconfig
-            ^.github/workflows/code-quality.yml
+            ^.github/workflows/copilot-setup-steps.yml
             ^.github/workflows/regenerate-readme.yml
             ^.github/workflows/issue-triage.yml
+            ^.github/workflows/manage-labels.yml
             ^AGENTS.md
           TARGET_REPOS: |
+            wp-cli/ability-command
             wp-cli/admin-command
+            wp-cli/block-command
             wp-cli/cache-command
             wp-cli/checksum-command
             wp-cli/config-command
@@ -80,7 +83,10 @@ jobs:
           FILE_PATTERNS: |
             ^.github/dependabot.yml
           TARGET_REPOS: |
+            wp-cli/ability-command
             wp-cli/admin-command
+            wp-cli/automated-tests
+            wp-cli/block-command
             wp-cli/cache-command
             wp-cli/checksum-command
             wp-cli/config-command
@@ -96,6 +102,7 @@ jobs:
             wp-cli/extension-command
             wp-cli/find-command
             wp-cli/google-sitemap-generator-cli
+            wp-cli/handbook
             wp-cli/i18n-command
             wp-cli/import-command
             wp-cli/language-command
