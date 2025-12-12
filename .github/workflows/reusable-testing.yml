@@ -199,6 +199,16 @@ jobs:
               "dbtype": "sqlite"
             },
             {
+              "php": "8.5",
+              "wp": "trunk",
+              "mysql": "mysql-8.0"
+            },
+            {
+              "php": "8.5",
+              "wp": "trunk",
+              "dbtype": "sqlite"
+            },
+            {
               "php": "nightly",
               "wp": "trunk",
               "mysql": "mysql-8.0"
@@ -223,7 +233,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Check out source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Check existence of composer.json & phpunit.xml.dist files
         id: check_files
@@ -280,7 +290,7 @@ jobs:
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up PHP environment
         uses: shivammathur/setup-php@v2
@@ -325,7 +335,7 @@ jobs:
 
       - name: Upload code coverage report
         if: ${{ matrix.coverage }}
-        uses: codecov/codecov-action@v5.5.1
+        uses: codecov/codecov-action@v5.5.2
         with:
           directory: build/logs
           flags: unit
@@ -339,7 +349,7 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Check out source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Check existence of composer.json & behat.yml files
         id: check_files
@@ -410,7 +420,7 @@ jobs:
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Install Ghostscript
         if: ${{ matrix.os == 'ubuntu-22.04' || matrix.os == '' }}
@@ -473,7 +483,7 @@ jobs:
           WP_CLI_TEST_DBTYPE: ${{ matrix.dbtype || 'mysql' }}
           WP_CLI_TEST_DBSOCKET: '${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock'
           WP_CLI_TEST_COVERAGE: ${{ matrix.coverage }}
-          BEHAT_ARGS: ${{ format( '{0} {1}', matrix.coverage && '--xdebug', runner.debug && '--format-pretty' ) }}
+          BEHAT_ARGS: ${{ format( '{0}', runner.debug && '--format-pretty' ) }}
         run: |
           composer behat -- $BEHAT_ARGS || composer behat-rerun -- $BEHAT_ARGS
 
@@ -486,7 +496,7 @@ jobs:
 
       - name: Upload code coverage report
         if: ${{ matrix.coverage }}
-        uses: codecov/codecov-action@v5.5.1
+        uses: codecov/codecov-action@v5.5.2
         with:
           # Because somehow providing `directory: build/logs` doesn't work for these files
           files: ${{ steps.coverage_files.outputs.files }}
