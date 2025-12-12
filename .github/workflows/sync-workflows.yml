@@ -24,6 +24,7 @@ jobs:
             ^.editorconfig
             ^.github/workflows/copilot-setup-steps.yml
             ^.github/workflows/regenerate-readme.yml
+            ^.github/workflows/welcome-new-contributors.yml
             ^.github/workflows/issue-triage.yml
             ^.github/workflows/check-branch-alias.yml
             ^.github/workflows/manage-labels.yml
