@@ -25,6 +25,7 @@ jobs:
             ^.github/workflows/copilot-setup-steps.yml
             ^.github/workflows/regenerate-readme.yml
             ^.github/workflows/issue-triage.yml
+            ^.github/workflows/check-branch-alias.yml
             ^.github/workflows/manage-labels.yml
             ^AGENTS.md
           TARGET_REPOS: |
