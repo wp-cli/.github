@@ -11,6 +11,26 @@ This package cannot be used directly. It is a container to provide centralized f
 
 See: [https://help.github.com/en/articles/creating-a-default-community-health-file-for-your-organization](https://help.github.com/en/articles/creating-a-default-community-health-file-for-your-organization)
 
+### GitHub Actions Workflows
+
+This repository contains reusable GitHub Actions workflows that are automatically synced to all WP-CLI repositories:
+
+- **Code Quality Checks** (`code-quality.yml`) - Runs linting, PHPCS, PHPStan, and other code quality tools
+- **Regenerate README** (`regenerate-readme.yml`) - Automatically regenerates README.md files from source
+- **Check Branch Alias** (`check-branch-alias.yml`) - Monitors and updates Composer branch-alias configuration
+
+#### Branch Alias Checker
+
+The branch alias checker workflow automatically ensures that the Composer `branch-alias` in each repository's `composer.json` is up-to-date. It:
+
+1. Runs weekly (every Monday at 2 AM UTC) or can be triggered manually
+2. Checks the latest release tag
+3. Calculates the expected branch-alias (next minor version after the latest release)
+4. Compares with the current branch-alias
+5. Creates a pull request if an update is needed
+
+For example, if a repository has released version `2.12.0`, the branch-alias should be set to `2.13.x-dev` to point to the next development version.
+
 ## Installing
 
 There's nothing to install, this package cannot be used directly.
