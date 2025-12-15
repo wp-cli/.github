@@ -40,7 +40,7 @@ jobs:
           echo "Commands found: ${COMMANDS}"
 
       - name: Create/Update labels
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           COMMANDS_JSON: ${{ steps.get-commands.outputs.commands }}
         with:
