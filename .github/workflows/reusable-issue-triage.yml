@@ -313,7 +313,7 @@ jobs:
               return;
             }
 
-            const labels = response.split(',')
+            const labels = response.replaceAll('```', '').split(',')
               .map(l => l.trim())
               .filter(l => l.length > 0);
 
