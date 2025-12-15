@@ -12,6 +12,7 @@ name: Issue Triage
 permissions:
   issues: write
   contents: read
+  models: read
 
 jobs:
   triage-new-issue:
