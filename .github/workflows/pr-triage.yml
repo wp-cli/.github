@@ -15,4 +15,9 @@ jobs:
   pr-triage:
     uses: wp-cli/.github/.github/workflows/reusable-pr-triage.yml@main
     with:
-      pr_number: ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number || github.event.pull_request.number }}
+      pr_number: >-
+        ${{
+          github.event_name == 'workflow_dispatch' &&
+          inputs.pr_number ||
+          github.event.pull_request.number
+        }}

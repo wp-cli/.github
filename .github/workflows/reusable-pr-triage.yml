@@ -104,9 +104,12 @@ jobs:
         uses: actions/github-script@v8
         env:
           AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         with:
           script: |
             const response = process.env.AI_RESPONSE;
+            const prNumber = parseInt(process.env.PR_NUMBER);
+
             if (!response || response.trim() === '') {
               console.log('No labels selected by AI');
               return;
@@ -121,7 +124,7 @@ jobs:
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: context.issue.number,
+                issue_number: prNumber,
                 labels: labels
               });
             } else {
