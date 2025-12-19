@@ -19,7 +19,8 @@ jobs:
     with:
       issue_number: >-
         ${{
-          github.event_name == 'workflow_dispatch' && inputs.issue_number ||
-          github.event_name == 'pull_request' && github.event.pull_request.number ||
-          github.event.issue.number
+          (github.event_name == 'workflow_dispatch' && inputs.issue_number) ||
+          (github.event_name == 'pull_request' && github.event.pull_request.number) ||
+          (github.event_name == 'issues' && github.event.issue.number) ||
+          ''
         }}
