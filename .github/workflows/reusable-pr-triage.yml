@@ -1,0 +1,330 @@
+---
+name: PR Triage
+
+'on':
+  workflow_call:
+    inputs:
+      pr_number:
+        description: 'PR number to triage (leave empty to process all)'
+        required: false
+        type: string
+
+permissions:
+  pull-requests: write
+  contents: read
+  models: read
+
+jobs:
+  triage-new-pr:
+    name: Triage New PR
+    if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get available labels
+        id: get-labels
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const labels = await github.rest.issues.listLabelsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            const labelNames = labels.data.map(label => label.name);
+            return labelNames.join(', ');
+
+      - name: Set environment variables
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          LABELS_RESULT: ${{ steps.get-labels.outputs.result }}
+        run: |
+          {
+            echo "AVAILABLE_LABELS=${LABELS_RESULT}"
+            echo "PR_TITLE=${PR_TITLE}"
+            echo "PR_BODY<<EOF"
+            echo "${PR_BODY}"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+
+      - name: Analyze PR with AI
+        id: ai-triage
+        uses: actions/ai-inference@v2
+        with:
+          prompt: |
+            ## Role
+
+            You are a pull request triage assistant. Analyze the current GitHub
+            pull request and identify the most appropriate existing labels. Use the
+            available tools to gather information; do not ask for information
+            to be provided.
+
+            ## Guidelines
+
+            - Only use labels that are from the list of available labels.
+            - You can choose multiple labels to apply.
+            - When generating shell commands, you **MUST NOT** use command
+              substitution with `$(...)`, `<(...)`, or `>(...)`. This is a
+              security measure to prevent unintended command execution.
+
+            ## Input Data
+
+            **Available Labels** (comma-separated):
+            ```
+            ${{ env.AVAILABLE_LABELS }}
+            ```
+
+            **PR Title**:
+            ```
+            ${{ env.PR_TITLE }}
+            ```
+
+            **PR Body**:
+            ```
+            ${{ env.PR_BODY }}
+            ```
+
+            ## Steps
+
+            1. Review the PR title, PR body, and available labels
+               provided above.
+
+            2. Based on the PR title and PR body, classify the pull request
+               and choose all appropriate labels from the list of available
+               labels.
+
+            3. Return only the selected labels as a comma-separated list,
+               with no additional text or explanation. For example:
+               ```
+               label1, label2, label3
+               ```
+
+      - name: Apply labels
+        if: steps.ai-triage.outputs.response != ''
+        uses: actions/github-script@v8
+        env:
+          AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
+        with:
+          script: |
+            const response = process.env.AI_RESPONSE;
+            if (!response || response.trim() === '') {
+              console.log('No labels selected by AI');
+              return;
+            }
+
+            const labels = response.replaceAll('```', '').split(',')
+              .map(l => l.trim())
+              .filter(l => l.length > 0);
+
+            if (labels.length > 0) {
+              console.log(`Applying labels: ${labels.join(', ')}`);
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: labels
+              });
+            } else {
+              console.log('No valid labels to apply');
+            }
+
+  triage-unlabeled-prs:
+    name: Triage Unlabeled PRs
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      inputs.pr_number == ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find and dispatch triage for unlabeled PRs
+        uses: actions/github-script@v8
+        with:
+          script: |
+            // Get all open pull requests
+            const prs = await github.paginate(
+              github.rest.pulls.list,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                per_page: 100
+              }
+            );
+
+            console.log(`Found ${prs.length} open pull requests`);
+
+            // Filter PRs without labels
+            const unlabeledPRs = prs.filter(pr =>
+              pr.labels.length === 0
+            );
+
+            console.log(
+              `Found ${unlabeledPRs.length} unlabeled pull requests`
+            );
+
+            if (unlabeledPRs.length === 0) {
+              console.log('No unlabeled pull requests to process');
+              return;
+            }
+
+            // Dispatch triage workflow for each unlabeled PR
+            for (const pr of unlabeledPRs) {
+              console.log(
+                `Dispatching triage for PR #${pr.number}: ` +
+                `"${pr.title}"`
+              );
+
+              try {
+                await github.rest.actions.createWorkflowDispatch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: 'pr-triage.yml',
+                  ref: context.ref || 'main',
+                  inputs: {
+                    pr_number: pr.number.toString()
+                  }
+                });
+              } catch (error) {
+                console.error(
+                  `Failed to dispatch triage for PR #${pr.number}: ` +
+                  `${error.message}`
+                );
+              }
+
+              // Add a small delay to avoid rate limiting
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            console.log('Finished dispatching triage workflows');
+
+  triage-single-pr:
+    name: Triage Single PR
+    if: |
+      github.event_name == 'workflow_dispatch' &&
+      inputs.pr_number != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get available labels
+        id: get-labels
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const labels = await github.rest.issues.listLabelsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100
+            });
+            const labelNames = labels.data.map(label => label.name);
+            return labelNames.join(', ');
+
+      - name: Get PR details
+        id: get-pr
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: parseInt('${{ inputs.pr_number }}')
+            });
+            return {
+              title: pr.data.title,
+              body: pr.data.body || ''
+            };
+
+      - name: Set environment variables
+        env:
+          PR_TITLE: ${{ fromJSON(steps.get-pr.outputs.result).title }}
+          PR_BODY: ${{ fromJSON(steps.get-pr.outputs.result).body }}
+          LABELS_RESULT: ${{ steps.get-labels.outputs.result }}
+        run: |
+          {
+            echo "AVAILABLE_LABELS=${LABELS_RESULT}"
+            echo "PR_TITLE=${PR_TITLE}"
+            echo "PR_BODY<<EOF"
+            echo "${PR_BODY}"
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+
+      - name: Analyze PR with AI
+        id: ai-triage
+        uses: actions/ai-inference@v2
+        with:
+          prompt: |
+            ## Role
+
+            You are a pull request triage assistant. Analyze the current GitHub
+            pull request and identify the most appropriate existing labels. Use the
+            available tools to gather information; do not ask for information
+            to be provided.
+
+            ## Guidelines
+
+            - Only use labels that are from the list of available labels.
+            - You can choose multiple labels to apply.
+            - When generating shell commands, you **MUST NOT** use command
+              substitution with `$(...)`, `<(...)`, or `>(...)`. This is a
+              security measure to prevent unintended command execution.
+
+            ## Input Data
+
+            **Available Labels** (comma-separated):
+            ```
+            ${{ env.AVAILABLE_LABELS }}
+            ```
+
+            **PR Title**:
+            ```
+            ${{ env.PR_TITLE }}
+            ```
+
+            **PR Body**:
+            ```
+            ${{ env.PR_BODY }}
+            ```
+
+            ## Steps
+
+            1. Review the PR title, PR body, and available labels
+               provided above.
+
+            2. Based on the PR title and PR body, classify the pull request
+               and choose all appropriate labels from the list of available
+               labels.
+
+            3. Return only the selected labels as a comma-separated list,
+               with no additional text or explanation. For example:
+               ```
+               label1, label2, label3
+               ```
+
+      - name: Apply labels
+        if: steps.ai-triage.outputs.response != ''
+        uses: actions/github-script@v8
+        env:
+          AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        with:
+          script: |
+            const response = process.env.AI_RESPONSE;
+            const prNumber = parseInt(process.env.PR_NUMBER);
+
+            if (!response || response.trim() === '') {
+              console.log('No labels selected by AI');
+              return;
+            }
+
+            const labels = response.replaceAll('```', '').split(',')
+              .map(l => l.trim())
+              .filter(l => l.length > 0);
+
+            if (labels.length > 0) {
+              console.log(`Applying labels: ${labels.join(', ')}`);
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                labels: labels
+              });
+            } else {
+              console.log('No valid labels to apply');
+            }
