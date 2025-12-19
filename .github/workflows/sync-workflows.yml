@@ -29,6 +29,7 @@ jobs:
             ^.github/workflows/manage-labels.yml
             ^AGENTS.md
           TARGET_REPOS: |
+            wp-cli/ai-command
             wp-cli/ability-command
             wp-cli/admin-command
             wp-cli/block-command
@@ -84,6 +85,7 @@ jobs:
           FILE_PATTERNS: |
             ^.github/dependabot.yml
           TARGET_REPOS: |
+            wp-cli/ai-command
             wp-cli/ability-command
             wp-cli/admin-command
             wp-cli/automated-tests
