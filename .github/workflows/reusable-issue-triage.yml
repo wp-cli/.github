@@ -12,6 +12,7 @@ name: Issue and PR Triage
 permissions:
   issues: write
   pull-requests: write
+  actions: write
   contents: read
   models: read
 
