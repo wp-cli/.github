@@ -15,7 +15,7 @@ jobs:
     if: ${{ github.repository_owner == 'wp-cli' }}
     steps:
       - name: Check out source code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up PHP environment
         uses: shivammathur/setup-php@v2
@@ -40,7 +40,7 @@ jobs:
           echo "Commands found: ${COMMANDS}"
 
       - name: Create/Update labels
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           COMMANDS_JSON: ${{ steps.get-commands.outputs.commands }}
         with:
