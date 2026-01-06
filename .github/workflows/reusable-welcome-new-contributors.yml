@@ -13,7 +13,7 @@ jobs:
         uses: actions/first-interaction@v3
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          pr_message: |
+          issue_message: |
             Hello! 👋
 
             Thanks for opening this pull request! Please check out our [contributing guidelines](https://make.wordpress.org/cli/handbook/contributions/contributing/). We appreciate you taking the initiative to contribute to this project.
