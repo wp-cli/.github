@@ -129,6 +129,7 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          base: ${{ github.event.repository.default_branch }}
           commit-message: "Update branch-alias to ${{ steps.check_alias.outputs.expected_alias }}"
           title: "Update branch-alias to ${{ steps.check_alias.outputs.expected_alias }}"
           body: |
