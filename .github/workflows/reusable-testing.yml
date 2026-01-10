@@ -128,17 +128,17 @@ jobs:
               "dbtype": "mariadb"
             },
             {
-              "php": "7.2",
+              "php": "7.4",
               "wp": "trunk",
               "mysql": "mysql-8.0"
             },
             {
-              "php": "7.2",
+              "php": "7.4",
               "wp": "trunk",
               "mysql": "mysql-5.7"
             },
             {
-              "php": "7.2",
+              "php": "7.4",
               "wp": "trunk",
               "mysql": "mysql-5.6"
             },
