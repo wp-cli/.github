@@ -30,3 +30,24 @@ jobs:
             Thanks for opening this pull request! Please check out our [contributing guidelines](https://make.wordpress.org/cli/handbook/contributions/contributing/). We appreciate you taking the initiative to contribute to this project.
 
             Contributing isn't limited to just code. We encourage you to contribute in the way that best fits your abilities, by writing tutorials, giving a demo at your local meetup, helping other users with their support questions, or revising our documentation.
+
+            Here are some useful Composer commands to get you started:
+
+            * `composer install`: Install dependencies.
+            * `composer test`: Run the full test suite.
+            * `composer phpcs`: Check for code style violations.
+            * `composer phpcbf`: Automatically fix code style violations.
+            * `composer phpunit`: Run unit tests.
+            * `composer behat`: Run behavior-driven tests.
+
+            To run a single Behat test, you can use the following command:
+
+            ```bash
+            # Run all tests in a single file
+            composer behat features/some-feature.feature
+
+            # Run only a specific scenario (where 123 is the line number of the "Scenario:" title)
+            composer behat features/some-feature.feature:123
+            ```
+
+            You can find a list of all available Behat steps in our [handbook](https://make.wordpress.org/cli/handbook/references/behat-steps/).
