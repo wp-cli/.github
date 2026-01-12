@@ -9,7 +9,15 @@ jobs:
   welcome:
     runs-on: ubuntu-latest
     steps:
+      - name: detect bot author
+        id: bot-author-check
+        uses: actions/github-script@v8
+        with:
+          result-encoding: string
+          script: return String(context.payload.sender.type === 'Bot' || context.payload.sender.login?.endsWith('[bot]'));
+
       - name: First Interaction
+        if: steps.bot-author-check.outputs.result != 'true'
         uses: actions/first-interaction@v3
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
