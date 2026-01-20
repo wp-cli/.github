@@ -52,15 +52,18 @@ jobs:
           git config --global user.name "Alain Schlesser"
 
       - name: Check if remote branch exists
-        run: echo "REMOTE_BRANCH_EXISTS=$([[ -z $(git ls-remote --heads origin regenerate-readme) ]] && echo "0" || echo "1")" >> $GITHUB_ENV
+        id: check_remote_branch
+        run: >
+          echo "exists=$(git ls-remote --exit-code --heads origin regenerate-readme &>/dev/null
+            && echo "true" || echo "false")" >>"${GITHUB_OUTPUT}"
 
       - name: Create branch to base pull request on
-        if: env.REMOTE_BRANCH_EXISTS == 0
+        if: ${{ steps.check_remote_branch.outputs.exists == 'false' }}
         run: |
           git checkout -b regenerate-readme
 
       - name: Fetch existing branch to add commits to
-        if: env.REMOTE_BRANCH_EXISTS == 1
+        if: ${{ steps.check_remote_branch.outputs.exists == 'true' }}
         run: |
           git fetch --all --prune
           git checkout regenerate-readme
@@ -78,25 +81,29 @@ jobs:
           wp scaffold package-readme --branch=${{ github.event.repository.default_branch }} --force .
 
       - name: Check if there are changes
-        run: echo "CHANGES_DETECTED=$([[ -z $(git status --porcelain) ]] && echo "0" || echo "1")" >> $GITHUB_ENV
+        id: check_changes
+        run: >
+          echo "detected=$(test -n "$(git status --porcelain 2>/dev/null)"
+            && echo "true" || echo "false")" >>"${GITHUB_OUTPUT}"
 
       - name: Commit changes
-        if: env.CHANGES_DETECTED == 1
+        if: ${{ steps.check_changes.outputs.detected == 'true' }}
         run: |
           git add README.md
           git commit -m "Regenerate README file - $(date +'%Y-%m-%d')"
           git push origin regenerate-readme
 
       - name: Create pull request
-        if: |
-          env.CHANGES_DETECTED == 1 &&
-          env.REMOTE_BRANCH_EXISTS == 0
+        if: ${{ steps.check_changes.outputs.detected == 'true' && steps.check_remote_branch.outputs.exists == 'false' }}
         uses: repo-sync/pull-request@v2
         with:
           source_branch: regenerate-readme
           destination_branch: ${{ github.event.repository.default_branch }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           pr_title: Regenerate README file
-          pr_body: "**This is an automated pull-request**\n\nRefreshes the `README.md` file with the latest changes to the docblocks in the source code."
+          pr_body: |
+            **This is an automated pull-request**
+
+            Refreshes the `README.md` file with the latest changes to the docblocks in the source code.
           pr_reviewer: schlessera
           pr_label: scope:documentation
