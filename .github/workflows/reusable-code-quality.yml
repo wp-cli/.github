@@ -9,6 +9,9 @@ on:
         required: false
         default: ''
 
+permissions:
+  contents: read
+
 # Cancels all previous workflow runs for the same branch that have not yet completed.
 concurrency:
   # The concurrency group contains the workflow name and the branch name.
@@ -17,12 +20,12 @@ concurrency:
 
 jobs:
 
-  actionlint: #-----------------------------------------------------------------------
+  actionlint:
     name: Lint GitHub Actions workflows
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Add problem matcher
         run: |
@@ -34,22 +37,22 @@ jobs:
         with:
           args: -color -shellcheck=
 
-  lint: #-----------------------------------------------------------------------
+  lint:
     name: Lint PHP files
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Check existence of composer.json file
         id: check_composer_file
-        uses: andstor/file-existence-action@v3
+        uses: andstor/file-existence-action@076e0072799f4942c8bc574a82233e1e4d13e9d6 # v3
         with:
           files: "composer.json"
 
       - name: Set up PHP environment
         if: steps.check_composer_file.outputs.files_exists == 'true'
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2
         with:
           php-version: 'latest'
           ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
@@ -59,7 +62,7 @@ jobs:
 
       - name: Install Composer dependencies & cache dependencies
         if: steps.check_composer_file.outputs.files_exists == 'true'
-        uses: "ramsey/composer-install@v3"
+        uses: "ramsey/composer-install@3cf229dc2919194e9e36783941438d17239e8520" # v3
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
         with:
@@ -68,7 +71,7 @@ jobs:
 
       - name: Check existence of vendor/bin/parallel-lint file
         id: check_linter_file
-        uses: andstor/file-existence-action@v3
+        uses: andstor/file-existence-action@076e0072799f4942c8bc574a82233e1e4d13e9d6 # v3
         with:
           files: "vendor/bin/parallel-lint"
 
@@ -95,15 +98,15 @@ jobs:
         env:
           ADDITIONAL_EXCLUDES: ${{ inputs.parallel-lint-excludes }}
 
-  lint-gherkin: #----------------------------------------------------------------
+  lint-gherkin:
     name: Lint Gherkin Feature files
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Setup node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
 
       - name: Download lint rules
         run: curl https://raw.githubusercontent.com/wp-cli/.github/refs/heads/main/.gherkin-lintrc -o $RUNNER_TEMP/.gherkin-lintrc
@@ -111,40 +114,40 @@ jobs:
       - name: Run linter
         run: npx --yes gherkin-lint -c $RUNNER_TEMP/.gherkin-lintrc
 
-  lint-spellcheck: #----------------------------------------------------------------
+  lint-spellcheck:
     name: Spell check
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Check existence of config file
         id: check_files
-        uses: andstor/file-existence-action@v3
+        uses: andstor/file-existence-action@076e0072799f4942c8bc574a82233e1e4d13e9d6 # v3
         with:
           files: ".typos.toml"
 
       - name: Check spelling
         if: steps.check_files.outputs.files_exists == 'true'
-        uses: crate-ci/typos@v1.42.1
+        uses: crate-ci/typos@65120634e79d8374d1aa2f27e54baa0c364fff5a # v1.42.1
 
-  phpcs: #----------------------------------------------------------------------
+  phpcs:
     name: PHPCS
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Check existence of composer.json & phpcs.xml.dist files
         id: check_files
-        uses: andstor/file-existence-action@v3
+        uses: andstor/file-existence-action@076e0072799f4942c8bc574a82233e1e4d13e9d6 # v3
         with:
           files: "composer.json, phpcs.xml.dist"
 
       - name: Set up PHP environment
         if: steps.check_files.outputs.files_exists == 'true'
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2
         with:
           php-version: 'latest'
           tools: cs2pr
@@ -153,7 +156,7 @@ jobs:
 
       - name: Install Composer dependencies & cache dependencies
         if: steps.check_files.outputs.files_exists == 'true'
-        uses: "ramsey/composer-install@v3"
+        uses: "ramsey/composer-install@3cf229dc2919194e9e36783941438d17239e8520" # v3
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
         with:
@@ -162,7 +165,7 @@ jobs:
 
       - name: Check existence of vendor/bin/phpcs file
         id: check_phpcs_binary_file
-        uses: andstor/file-existence-action@v3
+        uses: andstor/file-existence-action@076e0072799f4942c8bc574a82233e1e4d13e9d6 # v3
         with:
           files: "vendor/bin/phpcs"
 
@@ -177,23 +180,23 @@ jobs:
             cs2pr /tmp/phpcs-checkstyle-report.xml
           fi
 
-  phpstan: #----------------------------------------------------------------------
+  phpstan:
     name: PHPStan
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
 
       - name: Check existence of composer.json & phpcs.xml.dist files
         id: check_files
-        uses: andstor/file-existence-action@v3
+        uses: andstor/file-existence-action@076e0072799f4942c8bc574a82233e1e4d13e9d6 # v3
         with:
           files: "composer.json"
 
       - name: Set up PHP environment
         if: steps.check_files.outputs.files_exists == 'true'
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2
         with:
           php-version: 'latest'
           tools: cs2pr
@@ -202,7 +205,7 @@ jobs:
 
       - name: Install Composer dependencies & cache dependencies
         if: steps.check_files.outputs.files_exists == 'true'
-        uses: "ramsey/composer-install@v3"
+        uses: "ramsey/composer-install@3cf229dc2919194e9e36783941438d17239e8520" # v3
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
         with:
@@ -211,7 +214,7 @@ jobs:
 
       - name: Check existence of vendor/bin/phpstan file
         id: check_phpstan_binary_file
-        uses: andstor/file-existence-action@v3
+        uses: andstor/file-existence-action@076e0072799f4942c8bc574a82233e1e4d13e9d6 # v3
         with:
           files: "vendor/bin/phpstan"
 

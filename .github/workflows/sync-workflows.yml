@@ -9,15 +9,18 @@ on:
   schedule:
     - cron:  '*/10 * * * *' # Run every 10 minutes.
 
+permissions:
+  contents: write
+
 jobs:
 
-  sync-workflows: #-------------------------------------------------------------
+  sync-workflows:
     name: Sync GitHub Actions workflows
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'wp-cli' }}
     steps:
       - name: Sync files
-        uses: adrianjost/files-sync-action@v2.1.0
+        uses: adrianjost/files-sync-action@55d577a25b7106ebc3001353d981ecf8b0150df4 # v2.1.0
         with:
           FILE_PATTERNS: |
             ^.actrc
@@ -75,13 +78,13 @@ jobs:
             wp-cli/wp-super-cache-cli
           GITHUB_TOKEN: ${{ secrets.ACTIONS_BOT }}
 
-  sync-dependabot: #------------------------------------------------------------
+  sync-dependabot:
     name: Sync Dependabot configuration
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'wp-cli' }}
     steps:
       - name: Sync files
-        uses: adrianjost/files-sync-action@v2.1.0
+        uses: adrianjost/files-sync-action@55d577a25b7106ebc3001353d981ecf8b0150df4 # v2.1.0
         with:
           FILE_PATTERNS: |
             ^.github/dependabot.yml

@@ -27,20 +27,20 @@ jobs:
     
     steps:
       - name: Check out source code
-        uses: actions/checkout@v6
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           fetch-depth: 0 # Fetch all history for all tags
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2
         with:
           php-version: 'latest'
           tools: composer
 
       - name: Check existence of composer.json file
         id: check_composer_file
-        uses: andstor/file-existence-action@v3
+        uses: andstor/file-existence-action@076e0072799f4942c8bc574a82233e1e4d13e9d6 # v3
         with:
           files: "composer.json"
 
@@ -126,7 +126,7 @@ jobs:
 
       - name: Create Pull Request
         if: steps.check_alias.outputs.needs_update == 'true'
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@98357b18bf14b5342f975ff684046ec3b2a07725 # v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           base: ${{ github.event.repository.default_branch }}
