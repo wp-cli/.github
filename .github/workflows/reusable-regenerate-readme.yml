@@ -53,9 +53,8 @@ jobs:
 
       - name: Check if remote branch exists
         id: check_remote_branch
-        run: >
-          echo "exists=$(git ls-remote --exit-code --heads origin regenerate-readme &>/dev/null
-            && echo "true" || echo "false")" >>"${GITHUB_OUTPUT}"
+        run: |
+          echo "exists=$(git ls-remote --exit-code --heads origin regenerate-readme &>/dev/null && echo "true" || echo "false")" >>"${GITHUB_OUTPUT}"
 
       - name: Create branch to base pull request on
         if: ${{ steps.check_remote_branch.outputs.exists == 'false' }}
@@ -82,9 +81,8 @@ jobs:
 
       - name: Check if there are changes
         id: check_changes
-        run: >
-          echo "detected=$(test -n "$(git status --porcelain 2>/dev/null)"
-            && echo "true" || echo "false")" >>"${GITHUB_OUTPUT}"
+        run: |
+          echo "detected=$(test -n "$(git status --porcelain 2>/dev/null)" && echo "true" || echo "false")" >>"${GITHUB_OUTPUT}"
 
       - name: Commit changes
         if: ${{ steps.check_changes.outputs.detected == 'true' }}
