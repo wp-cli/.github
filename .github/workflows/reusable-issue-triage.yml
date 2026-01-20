@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Get available labels
         id: get-labels
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const labels = await github.rest.issues.listLabelsForRepo({
@@ -53,7 +53,7 @@ jobs:
 
       - name: Analyze with AI
         id: ai-triage
-        uses: actions/ai-inference@v2
+        uses: actions/ai-inference@a6101c89c6feaecc585efdd8d461f18bb7896f20 # v2
         with:
           prompt: |
             ## Role
@@ -105,7 +105,7 @@ jobs:
 
       - name: Apply labels
         if: steps.ai-triage.outputs.response != ''
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
           AVAILABLE_LABELS: ${{ env.AVAILABLE_LABELS }}
@@ -174,7 +174,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Find and dispatch triage for unlabeled items
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             // Get all open issues (includes PRs)
@@ -244,7 +244,7 @@ jobs:
     steps:
       - name: Get available labels
         id: get-labels
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const labels = await github.rest.issues.listLabelsForRepo({
@@ -257,7 +257,7 @@ jobs:
 
       - name: Get item details
         id: get-item
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const itemNumber = parseInt('${{ inputs.issue_number }}');
@@ -295,7 +295,7 @@ jobs:
 
       - name: Analyze with AI
         id: ai-triage
-        uses: actions/ai-inference@v2
+        uses: actions/ai-inference@a6101c89c6feaecc585efdd8d461f18bb7896f20 # v2
         with:
           prompt: |
             ## Role
@@ -347,7 +347,7 @@ jobs:
 
       - name: Apply labels
         if: steps.ai-triage.outputs.response != ''
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
           ITEM_NUMBER: ${{ inputs.issue_number }}
