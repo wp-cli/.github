@@ -3,6 +3,10 @@ name: Regenerate README file
 on:
   workflow_call:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 # Cancels all previous workflow runs for the same branch that have not yet completed.
 concurrency:
   # The concurrency group contains the workflow name and the branch name.
@@ -12,7 +16,7 @@ concurrency:
 
 jobs:
 
-  regenerate-readme: #----------------------------------------------------------
+  regenerate-readme:
     name: Regenerate README.md file
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'wp-cli' && ! contains(fromJson('[".github", "wp-cli", "wp-cli-bundle", "wp-super-cache-cli", "php-cli-tools", "wp-config-transformer", "wp-cli.github.com"]'), github.event.repository.name) }}

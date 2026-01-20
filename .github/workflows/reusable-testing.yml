@@ -24,6 +24,9 @@ on:
         required: false
         default: '{ "include": [], "exclude": [] }'
 
+permissions:
+  contents: read
+
 # Cancels all previous workflow runs for the same branch that have not yet completed.
 concurrency:
   # The concurrency group contains the workflow name and the branch name.
@@ -277,7 +280,7 @@ jobs:
           BASE_MATRIX: ${{ needs.get-matrix.outputs.matrix }}
           FILE_EXISTS: ${{ steps.check_files.outputs.files_exists == 'true' }}
 
-  unit: #-----------------------------------------------------------------------
+  unit:
     needs: prepare-unit
     if: ${{ needs.prepare-unit.outputs.matrix != '' }}
     name: Unit test /  PHP ${{ matrix.php }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ startsWith( matrix.os, 'windows' ) && '(Windows)' || '' }} ${{ startsWith( matrix.os, 'macos' ) && '(macOS)' || '' }}
@@ -341,7 +344,7 @@ jobs:
           flags: unit
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  prepare-functional: #---------------------------------------------------------
+  prepare-functional:
     name: Prepare matrix for functional tests
     needs: get-matrix
     runs-on: ubuntu-22.04
@@ -397,7 +400,7 @@ jobs:
           BASE_MATRIX: ${{ needs.get-matrix.outputs.matrix }}
           FILE_EXISTS: ${{ steps.check_files.outputs.files_exists == 'true' }}
 
-  functional: #-----------------------------------------------------------------
+  functional:
     needs: prepare-functional
     if: ${{ needs.prepare-functional.outputs.matrix != '' }}
     name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && matrix.mysql || 'SQLite' }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ startsWith( matrix.os, 'windows' ) && '(Windows)' || '' }} ${{ startsWith( matrix.os, 'macos' ) && '(macOS)' || '' }}

@@ -9,6 +9,9 @@ on:
         required: false
         default: ''
 
+permissions:
+  contents: read
+
 # Cancels all previous workflow runs for the same branch that have not yet completed.
 concurrency:
   # The concurrency group contains the workflow name and the branch name.
@@ -17,7 +20,7 @@ concurrency:
 
 jobs:
 
-  actionlint: #-----------------------------------------------------------------------
+  actionlint:
     name: Lint GitHub Actions workflows
     runs-on: ubuntu-latest
     steps:
@@ -34,7 +37,7 @@ jobs:
         with:
           args: -color -shellcheck=
 
-  lint: #-----------------------------------------------------------------------
+  lint:
     name: Lint PHP files
     runs-on: ubuntu-latest
     steps:
@@ -95,7 +98,7 @@ jobs:
         env:
           ADDITIONAL_EXCLUDES: ${{ inputs.parallel-lint-excludes }}
 
-  lint-gherkin: #----------------------------------------------------------------
+  lint-gherkin:
     name: Lint Gherkin Feature files
     runs-on: ubuntu-latest
     steps:
@@ -111,7 +114,7 @@ jobs:
       - name: Run linter
         run: npx --yes gherkin-lint -c $RUNNER_TEMP/.gherkin-lintrc
 
-  lint-spellcheck: #----------------------------------------------------------------
+  lint-spellcheck:
     name: Spell check
     runs-on: ubuntu-latest
     steps:
@@ -128,7 +131,7 @@ jobs:
         if: steps.check_files.outputs.files_exists == 'true'
         uses: crate-ci/typos@v1.42.1
 
-  phpcs: #----------------------------------------------------------------------
+  phpcs:
     name: PHPCS
     runs-on: ubuntu-latest
 
@@ -177,7 +180,7 @@ jobs:
             cs2pr /tmp/phpcs-checkstyle-report.xml
           fi
 
-  phpstan: #----------------------------------------------------------------------
+  phpstan:
     name: PHPStan
     runs-on: ubuntu-latest
 
