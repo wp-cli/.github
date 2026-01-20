@@ -119,6 +119,11 @@ jobs:
               return;
             }
 
+            if (!availableLabelsStr) {
+              console.log('No available labels found');
+              return;
+            }
+
             // Parse available labels
             const availableLabels = availableLabelsStr.split(',')
               .map(l => l.trim())
@@ -350,6 +355,11 @@ jobs:
 
             if (!response || response.trim() === '') {
               console.log('No labels selected by AI');
+              return;
+            }
+
+            if (!availableLabelsStr) {
+              console.log('No available labels found');
               return;
             }
 
