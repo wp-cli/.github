@@ -108,25 +108,49 @@ jobs:
         uses: actions/github-script@v8
         env:
           AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
+          AVAILABLE_LABELS: ${{ env.AVAILABLE_LABELS }}
         with:
           script: |
             const response = process.env.AI_RESPONSE;
+            const availableLabelsStr = process.env.AVAILABLE_LABELS;
+
             if (!response || response.trim() === '') {
               console.log('No labels selected by AI');
               return;
             }
 
-            const labels = response.replaceAll('```', '').split(',')
+            // Parse available labels
+            const availableLabels = availableLabelsStr.split(',')
               .map(l => l.trim())
               .filter(l => l.length > 0);
 
-            if (labels.length > 0) {
-              console.log(`Applying labels: ${labels.join(', ')}`);
+            // Parse AI suggested labels
+            const suggestedLabels = response.replaceAll('```', '').split(',')
+              .map(l => l.trim())
+              .filter(l => l.length > 0);
+
+            // Filter to only use labels that exist in the repository
+            const validLabels = suggestedLabels.filter(label =>
+              availableLabels.includes(label)
+            );
+
+            // Log any invalid labels
+            const invalidLabels = suggestedLabels.filter(label =>
+              !availableLabels.includes(label)
+            );
+            if (invalidLabels.length > 0) {
+              console.log(
+                `Skipping invalid labels: ${invalidLabels.join(', ')}`
+              );
+            }
+
+            if (validLabels.length > 0) {
+              console.log(`Applying labels: ${validLabels.join(', ')}`);
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
-                labels: labels
+                labels: validLabels
               });
             } else {
               console.log('No valid labels to apply');
@@ -317,27 +341,50 @@ jobs:
         env:
           AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
           ITEM_NUMBER: ${{ inputs.issue_number }}
+          AVAILABLE_LABELS: ${{ env.AVAILABLE_LABELS }}
         with:
           script: |
             const response = process.env.AI_RESPONSE;
             const itemNumber = parseInt(process.env.ITEM_NUMBER);
+            const availableLabelsStr = process.env.AVAILABLE_LABELS;
 
             if (!response || response.trim() === '') {
               console.log('No labels selected by AI');
               return;
             }
 
-            const labels = response.replaceAll('```', '').split(',')
+            // Parse available labels
+            const availableLabels = availableLabelsStr.split(',')
               .map(l => l.trim())
               .filter(l => l.length > 0);
 
-            if (labels.length > 0) {
-              console.log(`Applying labels: ${labels.join(', ')}`);
+            // Parse AI suggested labels
+            const suggestedLabels = response.replaceAll('```', '').split(',')
+              .map(l => l.trim())
+              .filter(l => l.length > 0);
+
+            // Filter to only use labels that exist in the repository
+            const validLabels = suggestedLabels.filter(label =>
+              availableLabels.includes(label)
+            );
+
+            // Log any invalid labels
+            const invalidLabels = suggestedLabels.filter(label =>
+              !availableLabels.includes(label)
+            );
+            if (invalidLabels.length > 0) {
+              console.log(
+                `Skipping invalid labels: ${invalidLabels.join(', ')}`
+              );
+            }
+
+            if (validLabels.length > 0) {
+              console.log(`Applying labels: ${validLabels.join(', ')}`);
               await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: itemNumber,
-                labels: labels
+                labels: validLabels
               });
             } else {
               console.log('No valid labels to apply');
