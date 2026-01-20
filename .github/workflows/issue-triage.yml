@@ -18,6 +18,7 @@ permissions:
   pull-requests: write
   actions: write
   contents: read
+  models: read
 
 jobs:
   issue-triage:
