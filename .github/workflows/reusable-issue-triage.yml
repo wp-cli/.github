@@ -124,9 +124,9 @@ jobs:
               return;
             }
 
-            // Parse available labels
+            // Parse available labels (normalized to lowercase)
             const availableLabels = availableLabelsStr.split(',')
-              .map(l => l.trim())
+              .map(l => l.trim().toLowerCase())
               .filter(l => l.length > 0);
 
             // Parse AI suggested labels
@@ -134,15 +134,20 @@ jobs:
               .map(l => l.trim())
               .filter(l => l.length > 0);
 
-            // Filter to only use labels that exist in the repository
-            const validLabels = suggestedLabels.filter(label =>
-              availableLabels.includes(label)
+            // Partition into valid and invalid in a single pass
+            const { validLabels, invalidLabels } = suggestedLabels.reduce(
+              (acc, label) => {
+                if (availableLabels.includes(label.toLowerCase())) {
+                  acc.validLabels.push(label);
+                } else {
+                  acc.invalidLabels.push(label);
+                }
+                return acc;
+              },
+              { validLabels: [], invalidLabels: [] }
             );
 
             // Log any invalid labels
-            const invalidLabels = suggestedLabels.filter(label =>
-              !availableLabels.includes(label)
-            );
             if (invalidLabels.length > 0) {
               console.log(
                 `Skipping invalid labels: ${invalidLabels.join(', ')}`
@@ -363,9 +368,9 @@ jobs:
               return;
             }
 
-            // Parse available labels
+            // Parse available labels (normalized to lowercase)
             const availableLabels = availableLabelsStr.split(',')
-              .map(l => l.trim())
+              .map(l => l.trim().toLowerCase())
               .filter(l => l.length > 0);
 
             // Parse AI suggested labels
@@ -373,15 +378,20 @@ jobs:
               .map(l => l.trim())
               .filter(l => l.length > 0);
 
-            // Filter to only use labels that exist in the repository
-            const validLabels = suggestedLabels.filter(label =>
-              availableLabels.includes(label)
+            // Partition into valid and invalid in a single pass
+            const { validLabels, invalidLabels } = suggestedLabels.reduce(
+              (acc, label) => {
+                if (availableLabels.includes(label.toLowerCase())) {
+                  acc.validLabels.push(label);
+                } else {
+                  acc.invalidLabels.push(label);
+                }
+                return acc;
+              },
+              { validLabels: [], invalidLabels: [] }
             );
 
             // Log any invalid labels
-            const invalidLabels = suggestedLabels.filter(label =>
-              !availableLabels.includes(label)
-            );
             if (invalidLabels.length > 0) {
               console.log(
                 `Skipping invalid labels: ${invalidLabels.join(', ')}`
