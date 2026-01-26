@@ -67,6 +67,7 @@ jobs:
             wp-cli/search-replace-command
             wp-cli/server-command
             wp-cli/shell-command
+            wp-cli/site-health-command
             wp-cli/super-admin-command
             wp-cli/widget-command
             wp-cli/wp-cli
@@ -126,6 +127,7 @@ jobs:
             wp-cli/search-replace-command
             wp-cli/server-command
             wp-cli/shell-command
+            wp-cli/site-health-command
             wp-cli/super-admin-command
             wp-cli/widget-command
             wp-cli/wp-cli
