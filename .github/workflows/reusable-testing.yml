@@ -116,8 +116,7 @@ jobs:
             {
               "php": "8.3",
               "wp": "latest",
-              "mysql": "mysql-8.0",
-              "coverage": true
+              "mysql": "mysql-8.0"
             },
             {
               "php": "8.3",
@@ -126,6 +125,39 @@ jobs:
             },
             {
               "php": "8.3",
+              "wp": "latest",
+              "mysql": "mariadb-11.4",
+              "dbtype": "mariadb"
+            },
+            {
+              "php": "8.4",
+              "wp": "latest",
+              "mysql": "mysql-8.0"
+            },
+            {
+              "php": "8.4",
+              "wp": "latest",
+              "dbtype": "sqlite"
+            },
+            {
+              "php": "8.4",
+              "wp": "latest",
+              "mysql": "mariadb-11.4",
+              "dbtype": "mariadb"
+            },
+            {
+              "php": "8.5",
+              "wp": "latest",
+              "mysql": "mysql-8.0",
+              "coverage": true
+            },
+            {
+              "php": "8.5",
+              "wp": "latest",
+              "dbtype": "sqlite"
+            },
+            {
+              "php": "8.5",
               "wp": "latest",
               "mysql": "mariadb-11.4",
               "dbtype": "mariadb"
@@ -202,6 +234,12 @@ jobs:
               "dbtype": "sqlite"
             },
             {
+              "php": "8.4",
+              "wp": "trunk",
+              "mysql": "mariadb-11.4",
+              "dbtype": "mariadb"
+            },
+            {
               "php": "8.5",
               "wp": "trunk",
               "mysql": "mysql-8.0"
@@ -212,6 +250,12 @@ jobs:
               "dbtype": "sqlite"
             },
             {
+              "php": "8.5",
+              "wp": "trunk",
+              "mysql": "mariadb-11.4",
+              "dbtype": "mariadb"
+            },
+            {
               "php": "nightly",
               "wp": "trunk",
               "mysql": "mysql-8.0"
@@ -220,6 +264,12 @@ jobs:
               "php": "nightly",
               "wp": "trunk",
               "dbtype": "sqlite"
+            },
+            {
+              "php": "nightly",
+              "wp": "trunk",
+              "mysql": "mariadb-11.4",
+              "dbtype": "mariadb"
             }
           ]
         }
