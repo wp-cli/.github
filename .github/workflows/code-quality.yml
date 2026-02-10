@@ -7,6 +7,8 @@ on:
     branches:
       - main
       - master
+  schedule:
+    - cron:  '17 2 * * *' # Run every day on a seemly random time.
 
 permissions:
   contents: read
