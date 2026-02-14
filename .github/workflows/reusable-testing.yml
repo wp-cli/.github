@@ -540,6 +540,21 @@ jobs:
           # Bust the cache at least once a month - output format: YYYY-MM.
           custom-cache-suffix: $(date -u "+%Y-%m")
 
+      - name: Determine MySQL authentication configuration
+        id: mysql-config
+        if: ${{ matrix.dbtype != 'sqlite' }}
+        run: |
+          if [[ "${{ matrix.mysql }}" == *"mysql-8.4"* ]]; then
+            # MySQL 8.4 requires explicit loading of mysql_native_password plugin
+            echo "auth-config<<EOF" >> $GITHUB_OUTPUT
+            echo "mysql_native_password=ON" >> $GITHUB_OUTPUT
+            echo "authentication_policy=mysql_native_password," >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            # MySQL 5.6, 5.7, 8.0 and MariaDB use the legacy configuration
+            echo "auth-config=default_authentication_plugin=mysql_native_password" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup MySQL Server
         id: setup-mysql
         if: ${{ matrix.dbtype != 'sqlite' }}
@@ -551,8 +566,7 @@ jobs:
           user: ${{ env.WP_CLI_TEST_DBUSER}}
           password: ${{ env.WP_CLI_TEST_DBPASS}}
           my-cnf: |
-            ${{ contains(matrix.mysql, 'mysql-8.4') && 'mysql_native_password=ON
-            authentication_policy=mysql_native_password,' || 'default_authentication_plugin=mysql_native_password' }}
+            ${{ steps.mysql-config.outputs.auth-config }}
 
       - name: Prepare test database
         if: ${{ matrix.dbtype != 'sqlite' }}
