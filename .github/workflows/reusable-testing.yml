@@ -121,6 +121,11 @@ jobs:
             {
               "php": "8.3",
               "wp": "latest",
+              "mysql": "mysql-8.4"
+            },
+            {
+              "php": "8.3",
+              "wp": "latest",
               "dbtype": "sqlite"
             },
             {
@@ -133,6 +138,11 @@ jobs:
               "php": "8.4",
               "wp": "latest",
               "mysql": "mysql-8.0"
+            },
+            {
+              "php": "8.4",
+              "wp": "latest",
+              "mysql": "mysql-8.4"
             },
             {
               "php": "8.4",
@@ -150,6 +160,11 @@ jobs:
               "wp": "latest",
               "mysql": "mysql-8.0",
               "coverage": true
+            },
+            {
+              "php": "8.5",
+              "wp": "latest",
+              "mysql": "mysql-8.4"
             },
             {
               "php": "8.5",
@@ -215,6 +230,11 @@ jobs:
             {
               "php": "8.3",
               "wp": "trunk",
+              "mysql": "mysql-8.4"
+            },
+            {
+              "php": "8.3",
+              "wp": "trunk",
               "dbtype": "sqlite"
             },
             {
@@ -231,6 +251,11 @@ jobs:
             {
               "php": "8.4",
               "wp": "trunk",
+              "mysql": "mysql-8.4"
+            },
+            {
+              "php": "8.4",
+              "wp": "trunk",
               "dbtype": "sqlite"
             },
             {
@@ -247,6 +272,11 @@ jobs:
             {
               "php": "8.5",
               "wp": "trunk",
+              "mysql": "mysql-8.4"
+            },
+            {
+              "php": "8.5",
+              "wp": "trunk",
               "dbtype": "sqlite"
             },
             {
@@ -259,6 +289,11 @@ jobs:
               "php": "nightly",
               "wp": "trunk",
               "mysql": "mysql-8.0"
+            },
+            {
+              "php": "nightly",
+              "wp": "trunk",
+              "mysql": "mysql-8.4"
             },
             {
               "php": "nightly",
@@ -505,6 +540,21 @@ jobs:
           # Bust the cache at least once a month - output format: YYYY-MM.
           custom-cache-suffix: $(date -u "+%Y-%m")
 
+      - name: Determine MySQL authentication configuration
+        id: mysql-config
+        if: ${{ matrix.dbtype != 'sqlite' }}
+        run: |
+          if [[ "${{ matrix.mysql }}" == *"mysql-8.4"* ]]; then
+            # MySQL 8.4 requires explicit loading of mysql_native_password plugin
+            echo "auth-config<<EOF" >> $GITHUB_OUTPUT
+            echo "mysql_native_password=ON" >> $GITHUB_OUTPUT
+            echo "authentication_policy=mysql_native_password," >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            # MySQL 5.6, 5.7, 8.0 and MariaDB use the legacy configuration
+            echo "auth-config=default_authentication_plugin=mysql_native_password" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup MySQL Server
         id: setup-mysql
         if: ${{ matrix.dbtype != 'sqlite' }}
@@ -516,7 +566,7 @@ jobs:
           user: ${{ env.WP_CLI_TEST_DBUSER}}
           password: ${{ env.WP_CLI_TEST_DBPASS}}
           my-cnf: |
-            default_authentication_plugin=mysql_native_password
+            ${{ steps.mysql-config.outputs.auth-config }}
 
       - name: Prepare test database
         if: ${{ matrix.dbtype != 'sqlite' }}
