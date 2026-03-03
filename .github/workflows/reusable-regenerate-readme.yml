@@ -98,11 +98,11 @@ jobs:
           fi
 
           REGISTERED=$(echo "$DUMP" | jq -r '
-          def walk(prefix):
+          def walk_commands(prefix):
             (if prefix == "" then .name else prefix + " " + .name end) as $path |
             (if $path != "wp" and $path != "" then $path else empty end),
-            (.subcommands[]? | walk(if $path == "wp" or $path == "" then "" else $path end));
-          walk("")
+            (.subcommands[]? | walk_commands(if $path == "wp" or $path == "" then "" else $path end));
+          walk_commands("")
           ')
 
           MISSING=0
