@@ -385,6 +385,7 @@ jobs:
         with:
           php-version: '${{ matrix.php }}'
           ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
+          extensions: zip
           coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
           tools: composer,cs2pr
         env:
