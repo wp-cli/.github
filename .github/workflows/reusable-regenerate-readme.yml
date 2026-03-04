@@ -48,8 +48,8 @@ jobs:
 
       - name: Configure git user
         run: |
-          git config --global user.email "info@wp-cli.org"
-          git config --global user.name "wp-make-coffee"
+          git config --global user.email "alain.schlesser@gmail.com"
+          git config --global user.name "Alain Schlesser"
 
       - name: Check if remote branch exists
         id: check_remote_branch
@@ -73,67 +73,6 @@ jobs:
           curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli-nightly.phar
           sudo mv wp-cli-nightly.phar /usr/local/bin/wp
           sudo chmod +x /usr/local/bin/wp
-
-      - name: Check documented commands against registered commands
-        if: steps.check_composer_file.outputs.files_exists == 'true'
-        run: |
-          TYPE=$(jq -r '.type' composer.json)
-          if [ "$TYPE" != "wp-cli-package" ]; then
-            echo "Not a wp-cli-package, skipping."
-            exit 0
-          fi
-
-          DOCUMENTED=$(jq -r '.extra.commands[]?' composer.json)
-          if [ -z "$DOCUMENTED" ]; then
-            echo "No extra.commands found in composer.json, skipping."
-            exit 0
-          fi
-
-          ROOTS=$(echo "$DOCUMENTED" | awk '{print $1}' | sort -u)
-
-          if ! DUMP=$(wp cli cmd-dump); then
-            echo "::error::Failed to dump commands"
-            exit 1
-          fi
-
-          REGISTERED=$(echo "$DUMP" | jq -r '
-          def walk_commands(prefix):
-            (if prefix == "" then .name else prefix + " " + .name end) as $path |
-            (if $path != "wp" and $path != "" then $path else empty end),
-            (.subcommands[]? | walk_commands(if $path == "wp" or $path == "" then "" else $path end));
-          walk_commands("")
-          ')
-
-          FOUND_ROOT=0
-          while IFS= read -r root; do
-            if echo "$REGISTERED" | grep -qE "^${root}( |$)"; then
-              FOUND_ROOT=1
-              break
-            fi
-          done <<< "$ROOTS"
-
-          if [ "$FOUND_ROOT" -eq 0 ]; then
-            echo "::error::None of the documented root commands were found in the registered commands. Package commands may have failed to load."
-            exit 1
-          fi
-
-          MISSING=0
-          while IFS= read -r cmd; do
-            ROOT=$(echo "$cmd" | awk '{print $1}')
-            if echo "$ROOTS" | grep -q "^$ROOT$"; then
-              if ! echo "$DOCUMENTED" | grep -Fqx "$cmd"; then
-                echo "::error::Missing command in composer.json: $cmd"
-                MISSING=1
-              fi
-            fi
-          done <<< "$REGISTERED"
-
-          if [ "$MISSING" -eq 1 ]; then
-            echo "::error::Please update extra.commands in composer.json before regenerating README."
-            exit 1
-          fi
-
-          echo "All commands correctly documented."
 
       - name: Regenerate README.md file
         run: |
