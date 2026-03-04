@@ -104,6 +104,19 @@ jobs:
           walk_commands("")
           ')
 
+          FOUND_ROOT=0
+          while IFS= read -r root; do
+            if echo "$REGISTERED" | grep -qE "^${root}( |$)"; then
+              FOUND_ROOT=1
+              break
+            fi
+          done <<< "$ROOTS"
+
+          if [ "$FOUND_ROOT" -eq 0 ]; then
+            echo "::error::None of the documented root commands were found in the registered commands. Package commands may have failed to load."
+            exit 1
+          fi
+
           MISSING=0
           while IFS= read -r cmd; do
             ROOT=$(echo "$cmd" | awk '{print $1}')
