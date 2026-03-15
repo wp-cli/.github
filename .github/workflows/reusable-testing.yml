@@ -550,7 +550,7 @@ jobs:
       - name: Setup MySQL Server
         id: setup-mysql
         if: ${{ matrix.dbtype != 'sqlite' }}
-        uses: shogo82148/actions-setup-mysql@27e74fac04c136a9f4c2dc2ed457df57331b3e0c # v1
+        uses: shogo82148/actions-setup-mysql@840178c12b07a58353c6312be784c23b63756eea # v1
         with:
           mysql-version: ${{ matrix.mysql }}
           auto-start: true
