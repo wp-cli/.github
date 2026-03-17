@@ -64,18 +64,23 @@ jobs:
           VERSION="${VERSION%%+*}"
           
           # Parse major, minor, and patch versions
-          IFS='.' read -r MAJOR MINOR _ <<< "$VERSION"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
           
-          # Validate that MAJOR and MINOR are numeric
-          if ! [[ "$MAJOR" =~ ^[0-9]+$ ]] || ! [[ "$MINOR" =~ ^[0-9]+$ ]]; then
+          # Validate that MAJOR, MINOR, and PATCH are numeric
+          if ! [[ "$MAJOR" =~ ^[0-9]+$ ]] || ! [[ "$MINOR" =~ ^[0-9]+$ ]] || ! [[ "$PATCH" =~ ^[0-9]+$ ]]; then
             echo "Invalid version format: $VERSION"
             echo "needs_update=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           
-          # Calculate next minor version
-          NEXT_MINOR=$((MINOR + 1))
-          EXPECTED_ALIAS="${MAJOR}.${NEXT_MINOR}.x-dev"
+          # Only update branch alias for major releases (minor and patch releases should keep the existing alias)
+          if [ "$MINOR" != "0" ] || [ "$PATCH" != "0" ]; then
+            echo "Not a major release (v${MAJOR}.0.0), skipping branch-alias update"
+            echo "needs_update=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          EXPECTED_ALIAS="${MAJOR}.x-dev"
           
           echo "Expected branch-alias: $EXPECTED_ALIAS"
           
@@ -137,7 +142,7 @@ jobs:
             - Previous branch-alias: `${{ steps.check_alias.outputs.current_alias }}`
             - Updated branch-alias: `${{ steps.check_alias.outputs.expected_alias }}`
             
-            The branch-alias should point to the next minor development version after the latest release.
+            The branch-alias should point to the major development version for the latest major release.
           branch: update-branch-alias
           delete-branch: true
           labels: |
