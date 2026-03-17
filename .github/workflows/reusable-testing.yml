@@ -560,6 +560,8 @@ jobs:
           # Fall back to legacy configuration for MySQL 5.6, 5.7, 8.0 and MariaDB.
           my-cnf: |
             ${{ steps.mysql-config.outputs.auth-config || 'default_authentication_plugin=mysql_native_password' }}
+            ${{ matrix.dbtype == 'mariadb' && '[client]' || '' }}
+            ${{ matrix.dbtype == 'mariadb' && 'disable-ssl-verify-server-cert' || '' }}
 
       - name: Prepare test database
         if: ${{ matrix.dbtype != 'sqlite' }}
