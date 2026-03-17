@@ -23,13 +23,13 @@ This repository contains reusable GitHub Actions workflows that are automaticall
 
 The branch alias checker workflow automatically ensures that the Composer `branch-alias` in each repository's `composer.json` is up-to-date. It:
 
-1. Runs weekly (every Monday at 2 AM UTC) or can be triggered manually
+1. Runs on every release or can be triggered manually
 2. Checks the latest release tag
-3. Calculates the expected branch-alias (next minor version after the latest release)
-4. Compares with the current branch-alias
+3. On a new major release (`vX.0.0`), updates the branch-alias to `X.x-dev`
+4. Skips minor and patch releases, as the branch-alias should remain unchanged
 5. Creates a pull request if an update is needed
 
-For example, if a repository has released version `2.12.0`, the branch-alias should be set to `2.13.x-dev` to point to the next development version.
+For example, if a repository releases `v2.2.6` or `v2.3.0`, the branch-alias stays at `2.x-dev`. Only when releasing `v3.0.0` should it change to `3.x-dev`.
 
 ## Installing
 
