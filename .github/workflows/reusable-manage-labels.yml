@@ -32,8 +32,8 @@ jobs:
         id: get-commands
         if: steps.check_composer_file.outputs.files_exists == 'true'
         run: |
-          # Extract commands from composer.json using composer config
-          COMMANDS=$(composer config extra.commands 2>/dev/null || echo "[]")
+          # Extract commands from composer.json safely using jq
+          COMMANDS=$(jq -c '.extra.commands // []' composer.json)
           echo "commands=${COMMANDS}" >> "$GITHUB_OUTPUT"
           echo "Commands found: ${COMMANDS}"
 
