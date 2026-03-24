@@ -296,12 +296,6 @@ jobs:
               "dbtype": "sqlite"
             },
             {
-              "php": "7.2",
-              "wp": "4.9",
-              "dbtype": "sqlite",
-              "object_cache": "sqlite"
-            },
-            {
               "php": "8.5",
               "wp": "latest",
               "dbtype": "sqlite",
