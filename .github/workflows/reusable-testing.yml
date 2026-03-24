@@ -288,11 +288,6 @@ jobs:
             {
               "php": "nightly",
               "wp": "trunk",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "nightly",
-              "wp": "trunk",
               "mysql": "mysql-8.4"
             },
             {
@@ -301,10 +296,22 @@ jobs:
               "dbtype": "sqlite"
             },
             {
-              "php": "nightly",
+              "php": "7.2",
+              "wp": "4.9",
+              "dbtype": "sqlite",
+              "object_cache": "sqlite"
+            },
+            {
+              "php": "8.5",
+              "wp": "latest",
+              "dbtype": "sqlite",
+              "object_cache": "sqlite"
+            },
+            {
+              "php": "8.5",
               "wp": "trunk",
-              "mysql": "mariadb-11.4",
-              "dbtype": "mariadb"
+              "dbtype": "sqlite",
+              "object_cache": "sqlite"
             }
           ]
         }
@@ -485,7 +492,7 @@ jobs:
   functional:
     needs: prepare-functional
     if: ${{ needs.prepare-functional.outputs.matrix != '' }}
-    name: Functional - WP ${{ matrix.wp }} on PHP ${{ matrix.php }} with ${{ matrix.dbtype != 'sqlite' && matrix.mysql || 'SQLite' }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ startsWith( matrix.os, 'windows' ) && '(Windows)' || '' }} ${{ startsWith( matrix.os, 'macos' ) && '(macOS)' || '' }}
+    name: PHP ${{ matrix.php }} / WP ${{ matrix.wp }} on ${{ matrix.dbtype != 'sqlite' && matrix.mysql || 'SQLite' }}${{ matrix.object_cache == 'sqlite' && ' (SQLite Object Cache)' || '' }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ startsWith( matrix.os, 'windows' ) && '(Windows)' || '' }} ${{ startsWith( matrix.os, 'macos' ) && '(macOS)' || '' }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
@@ -502,6 +509,7 @@ jobs:
       WP_CLI_TEST_DBUSER: wp_cli_test
       WP_CLI_TEST_DBPASS: password1
       WP_CLI_TEST_DBHOST: 127.0.0.1:3306
+      WP_CLI_TEST_OBJECT_CACHE: ${{ matrix.object_cache }}
 
     steps:
       - name: Check out source code
