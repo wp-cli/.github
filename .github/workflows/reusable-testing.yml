@@ -367,67 +367,16 @@ jobs:
   unit:
     needs: prepare-unit
     if: ${{ needs.prepare-unit.outputs.matrix != '' }}
-    name: Unit test - PHP ${{ matrix.php }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ startsWith( matrix.os, 'windows' ) && '(Windows)' || '' }} ${{ startsWith( matrix.os, 'macos' ) && '(macOS)' || '' }}
+    name: Unit
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
-    runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
-
-    continue-on-error: ${{ matrix.php == 'nightly' }}
-
-    steps:
-      - name: Check out source code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Set up PHP environment
-        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
-        with:
-          php-version: '${{ matrix.php }}'
-          ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
-          extensions: zip
-          coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
-          tools: composer,cs2pr
-        env:
-          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Install Composer dependencies & cache dependencies
-        uses: "ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda" # v3
-        env:
-          COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
-        with:
-          # Bust the cache at least once a month - output format: YYYY-MM.
-          custom-cache-suffix: $(date -u "+%Y-%m")
-
-      # PHPUnit 10+ may fail a test run when the "old" configuration format is used.
-      # Luckily, there is a build-in migration tool since PHPUnit 9.3.
-      - name: Migrate PHPUnit configuration for PHPUnit 10+
-        if: ${{ matrix.php >= 8.2 || matrix.php == 'nightly' }}
-        continue-on-error: true
-        run: composer phpunit -- --migrate-configuration
-
-      - name: Setup problem matcher to provide annotations for PHPUnit
-        run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
-
-      - name: Run PHPUnit with coverage
-        if: ${{ matrix.coverage }}
-        run: |
-          composer phpunit -- --coverage-clover build/logs/unit-coverage.xml
-
-      - name: Run PHPUnit
-        if: ${{ ! matrix.coverage }}
-        # For example TestBehatTags.php in wp-cli-tests depends on the db type.
-        env:
-          WP_CLI_TEST_DBTYPE: 'sqlite'
-        run: |
-          composer phpunit
-
-      - name: Upload code coverage report
-        if: ${{ matrix.coverage }}
-        uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5.5.3
-        with:
-          directory: build/logs
-          flags: unit
-          token: ${{ secrets.CODECOV_TOKEN }}
+    uses: ./.github/workflows/reusable-unit.yml
+    secrets: inherit
+    with:
+      php: ${{ matrix.php }}
+      coverage: ${{ matrix.coverage }}
+      os: ${{ matrix.os }}
 
   prepare-functional:
     name: Prepare matrix for functional tests
@@ -486,119 +435,17 @@ jobs:
   functional:
     needs: prepare-functional
     if: ${{ needs.prepare-functional.outputs.matrix != '' }}
-    name: PHP ${{ matrix.php }} - WP ${{ matrix.wp }} on ${{ matrix.dbtype != 'sqlite' && matrix.mysql || 'SQLite' }}${{ matrix.object_cache == 'sqlite' && ' (SQLite Object Cache)' || '' }}${{ matrix.coverage && ' (with coverage)' || '' }} ${{ startsWith( matrix.os, 'windows' ) && '(Windows)' || '' }} ${{ startsWith( matrix.os, 'macos' ) && '(macOS)' || '' }}
+    name: Functional
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
-    runs-on: ${{ matrix.os || 'ubuntu-22.04' }}
-
-    continue-on-error: ${{ matrix.dbtype == 'sqlite' || matrix.dbtype == 'mariadb' || matrix.php == 'nightly' }}
-
-    env:
-      MYSQL_HOST: 127.0.0.1
-      MYSQL_TCP_PORT: 3306
-      WP_CLI_TEST_DBROOTUSER: root
-      WP_CLI_TEST_DBROOTPASS: root
-      WP_CLI_TEST_DBNAME: wp_cli_test
-      WP_CLI_TEST_DBUSER: wp_cli_test
-      WP_CLI_TEST_DBPASS: password1
-      WP_CLI_TEST_DBHOST: 127.0.0.1:3306
-      WP_CLI_TEST_OBJECT_CACHE: ${{ matrix.object_cache }}
-
-    steps:
-      - name: Check out source code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Install Ghostscript
-        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.os == '' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install ghostscript -y
-
-      - name: Set up PHP environment
-        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
-        with:
-          php-version: '${{ matrix.php }}'
-          ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
-          extensions: gd, imagick, mysql, zip, pdo_sqlite
-          coverage: ${{ matrix.coverage && 'xdebug' || 'none' }}
-          tools: composer
-        env:
-          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Change ImageMagick policy to allow pdf->png conversion.
-        if: ${{ matrix.os == 'ubuntu-22.04' || matrix.os == '' }}
-        run: |
-          sudo sed -i 's/^.*policy.*coder.*none.*PDF.*//' /etc/ImageMagick-6/policy.xml
-
-      - name: Install Composer dependencies & cache dependencies
-        uses: "ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda" # v3
-        env:
-          COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
-        with:
-          # Bust the cache at least once a month - output format: YYYY-MM.
-          custom-cache-suffix: $(date -u "+%Y-%m")
-
-      # MySQL 8.4 requires explicit loading of mysql_native_password plugin
-      - name: Determine MySQL authentication configuration
-        id: mysql-config
-        if: ${{ matrix.dbtype != 'sqlite' && matrix.mysql == 'mysql-8.4' }}
-        run: |
-          echo "auth-config<<EOF" >> $GITHUB_OUTPUT
-          echo "mysql_native_password=ON" >> $GITHUB_OUTPUT
-          echo "authentication_policy=mysql_native_password," >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Setup MySQL Server
-        id: setup-mysql
-        if: ${{ matrix.dbtype != 'sqlite' }}
-        uses: shogo82148/actions-setup-mysql@840178c12b07a58353c6312be784c23b63756eea # v1
-        with:
-          mysql-version: ${{ matrix.mysql }}
-          auto-start: true
-          root-password: ${{ env.WP_CLI_TEST_DBROOTPASS }}
-          user: ${{ env.WP_CLI_TEST_DBUSER}}
-          password: ${{ env.WP_CLI_TEST_DBPASS}}
-          # Fall back to legacy configuration for MySQL 5.6, 5.7, 8.0 and MariaDB.
-          my-cnf: |
-            ${{ steps.mysql-config.outputs.auth-config || 'default_authentication_plugin=mysql_native_password' }}
-            ${{ matrix.dbtype == 'mariadb' && '[client]' || '' }}
-            ${{ matrix.dbtype == 'mariadb' && 'disable-ssl-verify-server-cert' || '' }}
-
-      - name: Prepare test database
-        if: ${{ matrix.dbtype != 'sqlite' }}
-        run: composer prepare-tests
-
-      - name: Check Behat environment
-        env:
-          WP_VERSION: '${{ matrix.wp }}'
-          WP_CLI_TEST_DBTYPE: ${{ matrix.dbtype || 'mysql' }}
-          WP_CLI_TEST_DBSOCKET: '${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock'
-          WP_CLI_TEST_DEBUG_BEHAT_ENV: 1
-        run: composer behat
-
-      - name: Run Behat
-        env:
-          WP_VERSION: '${{ matrix.wp }}'
-          WP_CLI_TEST_DBTYPE: ${{ matrix.dbtype || 'mysql' }}
-          WP_CLI_TEST_DBSOCKET: '${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock'
-          WP_CLI_TEST_COVERAGE: ${{ matrix.coverage }}
-          BEHAT_ARGS: ${{ format( '{0}', runner.debug && '--format=pretty' ) }}
-        run: |
-          composer behat -- $BEHAT_ARGS || composer behat-rerun -- $BEHAT_ARGS
-
-      - name: Retrieve list of coverage files
-        id: coverage_files
-        if: ${{ matrix.coverage }}
-        run: |
-          FILES=$(find "$GITHUB_WORKSPACE/build/logs" -path '*.*' | paste -s -d "," -)
-          echo "files=$FILES" >> $GITHUB_OUTPUT
-
-      - name: Upload code coverage report
-        if: ${{ matrix.coverage }}
-        uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5.5.3
-        with:
-          # Because somehow providing `directory: build/logs` doesn't work for these files
-          files: ${{ steps.coverage_files.outputs.files }}
-          flags: feature
-          token: ${{ secrets.CODECOV_TOKEN }}
+    uses: ./.github/workflows/reusable-functional.yml
+    secrets: inherit
+    with:
+      php: ${{ matrix.php }}
+      wp: ${{ matrix.wp }}
+      dbtype: ${{ matrix.dbtype }}
+      mysql: ${{ matrix.mysql }}
+      object_cache: ${{ matrix.object_cache }}
+      coverage: ${{ matrix.coverage }}
+      os: ${{ matrix.os }}
