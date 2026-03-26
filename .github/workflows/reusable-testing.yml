@@ -367,7 +367,7 @@ jobs:
   unit:
     needs: prepare-unit
     if: ${{ needs.prepare-unit.outputs.matrix != '' }}
-    name: Unit
+    name: PHP ${{ matrix.php }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
@@ -435,7 +435,7 @@ jobs:
   functional:
     needs: prepare-functional
     if: ${{ needs.prepare-functional.outputs.matrix != '' }}
-    name: Functional / PHP ${{ matrix.php }} 
+    name: PHP ${{ matrix.php }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
