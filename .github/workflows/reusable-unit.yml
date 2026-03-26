@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   unit:
-    name: Unit ${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
+    name: Unit | PHP ${{ inputs.php }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
     runs-on: ${{ inputs.os || 'ubuntu-22.04' }}
     continue-on-error: ${{ inputs.php == 'nightly' }}
 
