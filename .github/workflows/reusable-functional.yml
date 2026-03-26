@@ -76,18 +76,10 @@ jobs:
         run: |
           sudo sed -i 's/^.*policy.*coder.*none.*PDF.*//' /etc/ImageMagick-6/policy.xml
 
-      # This date is used to ensure that the PHP compatibility cache is cleared at least once every week.
-      # http://man7.org/linux/man-pages/man1/date.1.html
-      - name: "Get last Monday's date"
-        id: get-date
-        run: echo "date=$(/bin/date -u --date='last Mon' "+%F")" >> "$GITHUB_OUTPUT"
-
       - name: Install Composer dependencies & cache dependencies
         uses: "ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda" # v3
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
-        with:
-          custom-cache-suffix: ${{ steps.get-date.outputs.date }}
 
       # MySQL 8.4 requires explicit loading of mysql_native_password plugin
       - name: Determine MySQL authentication configuration
