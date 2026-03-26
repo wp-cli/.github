@@ -1,0 +1,146 @@
+name: Functional testing
+on:
+  workflow_call:
+    inputs:
+      php:
+        type: string
+        required: true
+      wp:
+        type: string
+        required: true
+      dbtype:
+        type: string
+        required: false
+        default: 'mysql'
+      mysql:
+        type: string
+        required: false
+        default: ''
+      object_cache:
+        type: string
+        required: false
+        default: 'none'
+      coverage:
+        type: boolean
+        required: false
+        default: false
+      os:
+        type: string
+        required: false
+        default: 'ubuntu-22.04'
+
+permissions:
+  contents: read
+
+jobs:
+  functional:
+    name: PHP ${{ inputs.php }} | WP ${{ inputs.wp }} | ${{ inputs.dbtype == 'sqlite' && 'SQLite' || inputs.dbtype == 'mariadb' && 'MariaDB' || 'MySQL' }}${{ inputs.object_cache == 'sqlite' && ' (Obj Cache)' || '' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
+    runs-on: ${{ inputs.os || 'ubuntu-22.04' }}
+
+    continue-on-error: ${{ inputs.dbtype == 'sqlite' || inputs.dbtype == 'mariadb' || inputs.php == 'nightly' }}
+
+    env:
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_TCP_PORT: 3306
+      WP_CLI_TEST_DBROOTUSER: root
+      WP_CLI_TEST_DBROOTPASS: root
+      WP_CLI_TEST_DBNAME: wp_cli_test
+      WP_CLI_TEST_DBUSER: wp_cli_test
+      WP_CLI_TEST_DBPASS: password1
+      WP_CLI_TEST_DBHOST: 127.0.0.1:3306
+      WP_CLI_TEST_OBJECT_CACHE: ${{ inputs.object_cache }}
+
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Install Ghostscript
+        if: ${{ inputs.os == 'ubuntu-22.04' || inputs.os == '' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install ghostscript -y
+
+      - name: Set up PHP environment
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
+        with:
+          php-version: '${{ inputs.php }}'
+          ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
+          extensions: gd, imagick, mysql, zip, pdo_sqlite
+          coverage: ${{ inputs.coverage && 'xdebug' || 'none' }}
+          tools: composer
+        env:
+          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Change ImageMagick policy to allow pdf->png conversion.
+        if: ${{ inputs.os == 'ubuntu-22.04' || inputs.os == '' }}
+        run: |
+          sudo sed -i 's/^.*policy.*coder.*none.*PDF.*//' /etc/ImageMagick-6/policy.xml
+
+      - name: Install Composer dependencies & cache dependencies
+        uses: "ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda" # v3
+        env:
+          COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
+
+      # MySQL 8.4 requires explicit loading of mysql_native_password plugin
+      - name: Determine MySQL authentication configuration
+        id: mysql-config
+        if: ${{ inputs.dbtype != 'sqlite' && inputs.mysql == 'mysql-8.4' }}
+        run: |
+          echo "auth-config<<EOF" >> $GITHUB_OUTPUT
+          echo "mysql_native_password=ON" >> $GITHUB_OUTPUT
+          echo "authentication_policy=mysql_native_password," >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Setup MySQL Server
+        id: setup-mysql
+        if: ${{ inputs.dbtype != 'sqlite' }}
+        uses: shogo82148/actions-setup-mysql@840178c12b07a58353c6312be784c23b63756eea # v1
+        with:
+          mysql-version: ${{ inputs.mysql }}
+          auto-start: true
+          root-password: ${{ env.WP_CLI_TEST_DBROOTPASS }}
+          user: ${{ env.WP_CLI_TEST_DBUSER}}
+          password: ${{ env.WP_CLI_TEST_DBPASS}}
+          # Fall back to legacy configuration for MySQL 5.6, 5.7, 8.0 and MariaDB.
+          my-cnf: |
+            ${{ steps.mysql-config.outputs.auth-config || 'default_authentication_plugin=mysql_native_password' }}
+            ${{ inputs.dbtype == 'mariadb' && '[client]' || '' }}
+            ${{ inputs.dbtype == 'mariadb' && 'disable-ssl-verify-server-cert' || '' }}
+
+      - name: Prepare test database
+        if: ${{ inputs.dbtype != 'sqlite' }}
+        run: composer prepare-tests
+
+      - name: Check Behat environment
+        env:
+          WP_VERSION: '${{ inputs.wp }}'
+          WP_CLI_TEST_DBTYPE: ${{ inputs.dbtype || 'mysql' }}
+          WP_CLI_TEST_DBSOCKET: '${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock'
+          WP_CLI_TEST_DEBUG_BEHAT_ENV: 1
+        run: composer behat
+
+      - name: Run Behat
+        env:
+          WP_VERSION: '${{ inputs.wp }}'
+          WP_CLI_TEST_DBTYPE: ${{ inputs.dbtype || 'mysql' }}
+          WP_CLI_TEST_DBSOCKET: '${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock'
+          WP_CLI_TEST_COVERAGE: ${{ inputs.coverage }}
+          BEHAT_ARGS: ${{ format( '{0}', runner.debug && '--format=pretty' ) }}
+        run: |
+          composer behat -- $BEHAT_ARGS || composer behat-rerun -- $BEHAT_ARGS
+
+      - name: Retrieve list of coverage files
+        id: coverage_files
+        if: ${{ inputs.coverage }}
+        run: |
+          FILES=$(find "$GITHUB_WORKSPACE/build/logs" -path '*.*' | paste -s -d "," -)
+          echo "files=$FILES" >> $GITHUB_OUTPUT
+
+      - name: Upload code coverage report
+        if: ${{ inputs.coverage }}
+        uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5.5.3
+        with:
+          # Because somehow providing `directory: build/logs` doesn't work for these files
+          files: ${{ steps.coverage_files.outputs.files }}
+          flags: feature
+          token: ${{ secrets.CODECOV_TOKEN }}
