@@ -34,7 +34,7 @@ permissions:
 
 jobs:
   functional:
-    name: Functional / PHP ${{ inputs.php }} / WP ${{ inputs.wp }} | ${{ inputs.dbtype == 'sqlite' && 'SQLite' || inputs.dbtype == 'mariadb' && 'MariaDB' || 'MySQL' }}${{ inputs.object_cache == 'sqlite' && ' (Obj Cache)' || '' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
+    name: Functional / PHP ${{ inputs.php }} | WP ${{ inputs.wp }} | ${{ inputs.dbtype == 'sqlite' && 'SQLite' || inputs.dbtype == 'mariadb' && 'MariaDB' || 'MySQL' }}${{ inputs.object_cache == 'sqlite' && ' (Obj Cache)' || '' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
     runs-on: ${{ inputs.os || 'ubuntu-22.04' }}
 
     continue-on-error: ${{ inputs.dbtype == 'sqlite' || inputs.dbtype == 'mariadb' || inputs.php == 'nightly' }}

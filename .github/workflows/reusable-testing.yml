@@ -435,7 +435,7 @@ jobs:
   functional:
     needs: prepare-functional
     if: ${{ needs.prepare-functional.outputs.matrix != '' }}
-    name: Functional
+    name: Functional / PHP ${{ matrix.php }} 
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
