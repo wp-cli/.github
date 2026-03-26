@@ -14,6 +14,9 @@ on:
         required: false
         default: 'ubuntu-22.04'
 
+permissions:
+  contents: read
+
 jobs:
   unit:
     name: PHP ${{ inputs.php }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
