@@ -375,8 +375,8 @@ jobs:
     secrets: inherit
     with:
       php: ${{ matrix.php }}
-      coverage: ${{ matrix.coverage }}
-      os: ${{ matrix.os }}
+      coverage: ${{ matrix.coverage == true }}
+      os: ${{ matrix.os || '' }}
 
   prepare-functional:
     name: Prepare matrix for functional tests
@@ -445,7 +445,7 @@ jobs:
       php: ${{ matrix.php }}
       wp: ${{ matrix.wp }}
       dbtype: ${{ matrix.dbtype || 'mysql' }}
-      mysql: ${{ matrix.mysql }}
+      mysql: ${{ matrix.mysql || '' }}
       object_cache: ${{ matrix.object_cache }}
-      coverage: ${{ matrix.coverage }}
-      os: ${{ matrix.os }}
+      coverage: ${{ matrix.coverage == true }}
+      os: ${{ matrix.os || '' }}
