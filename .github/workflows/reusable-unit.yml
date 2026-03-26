@@ -44,7 +44,7 @@ jobs:
           custom-cache-suffix: $(date -u "+%Y-%m")
 
       # PHPUnit 10+ may fail a test run when the "old" configuration format is used.
-      # Luckily, there is a build-in migration tool since PHPUnit 9.3.
+      # Luckily, there is a built-in migration tool since PHPUnit 9.3.
       - name: Migrate PHPUnit configuration for PHPUnit 10+
         if: ${{ inputs.php >= 8.2 || inputs.php == 'nightly' }}
         continue-on-error: true

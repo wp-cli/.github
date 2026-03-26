@@ -10,10 +10,12 @@ on:
         required: true
       dbtype:
         type: string
-        required: true
+        required: false
+        default: 'mysql'
       mysql:
         type: string
-        required: true
+        required: false
+        default: ''
       object_cache:
         type: string
         required: false
