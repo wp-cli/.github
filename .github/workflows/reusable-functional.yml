@@ -107,6 +107,22 @@ jobs:
             ${{ inputs.dbtype == 'mariadb' && '[client]' || '' }}
             ${{ inputs.dbtype == 'mariadb' && 'disable-ssl-verify-server-cert' || '' }}
 
+      - name: Configure MariaDB client SSL settings
+        if: ${{ inputs.dbtype == 'mariadb' }}
+        run: |
+          # WP-CLI passes --no-defaults to mysql/mysqldump which bypasses config files.
+          # Wrapper scripts ensure --skip-ssl-verify-server-cert is always passed,
+          # preventing MariaDB 11.4+ warnings about ssl-verify-server-cert being
+          # auto-disabled when MYSQL_PWD is used.
+          mkdir -p "$HOME/.mariadb-wrappers"
+          for TOOL in mysql mysqldump mysqlcheck mysqlimport mariadb mariadb-dump mariadb-check mariadb-import; do
+            REAL=$(command -v "$TOOL" 2>/dev/null) || continue
+            printf '#!/bin/sh\nexec "%s" --skip-ssl-verify-server-cert "$@"\n' "$REAL" \
+              > "$HOME/.mariadb-wrappers/$TOOL"
+            chmod +x "$HOME/.mariadb-wrappers/$TOOL"
+          done
+          echo "$HOME/.mariadb-wrappers" >> "$GITHUB_PATH"
+
       - name: Prepare test database
         if: ${{ inputs.dbtype != 'sqlite' }}
         run: composer prepare-tests
