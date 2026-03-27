@@ -60,6 +60,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install ghostscript -y
 
+      - name: Install SQLite3
+        if: ${{ startsWith(inputs.os, 'windows') }}
+        run: choco install sqlite
+
       - name: Set up PHP environment
         uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
         with:
