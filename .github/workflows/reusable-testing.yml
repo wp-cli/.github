@@ -306,6 +306,18 @@ jobs:
               "wp": "trunk",
               "dbtype": "sqlite",
               "object_cache": "sqlite"
+            },
+            {
+              "php": "8.5",
+              "wp": "trunk",
+              "dbtype": "sqlite",
+              "os": "macos-latest"
+            },
+            {
+              "php": "8.5",
+              "wp": "trunk",
+              "dbtype": "sqlite",
+              "os": "windows-latest"
             }
           ]
         }
