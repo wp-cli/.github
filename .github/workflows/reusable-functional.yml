@@ -64,6 +64,10 @@ jobs:
         if: ${{ startsWith(inputs.os, 'windows') }}
         run: choco install sqlite ghostscript --yes
 
+      - name: Install dependencies (macOS)
+        if: ${{ startsWith(inputs.os, 'macos') }}
+        run: brew install ghostscript
+
       - name: Set up PHP environment
         uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
         with:
