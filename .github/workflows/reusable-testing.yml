@@ -323,7 +323,7 @@ jobs:
         }
         EOF
         )
-        MERGED_MATRIX=$(echo "$MATRIX" "$ADDITIONAL_MATRIX" | jq -s '{include: (.[0].include + .[1].include | unique), exclude: (.[0].exclude + .[1].exclude | unique)}')
+        MERGED_MATRIX=$(echo "$MATRIX" "$ADDITIONAL_MATRIX" | jq -s '{include: (.[0].include + .[1].include | map(if .os == null then .os = "" else . end) | unique), exclude: (.[0].exclude + .[1].exclude | unique)}')
         echo matrix=$MERGED_MATRIX >> $GITHUB_OUTPUT
 
   prepare-unit:
