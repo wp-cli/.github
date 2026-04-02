@@ -112,8 +112,14 @@ jobs:
           # Fall back to legacy configuration for MySQL 5.6, 5.7, 8.0 and MariaDB.
           my-cnf: |
             ${{ steps.mysql-config.outputs.auth-config || 'default_authentication_plugin=mysql_native_password' }}
-            ${{ inputs.dbtype == 'mariadb' && '[client]' || '' }}
-            ${{ inputs.dbtype == 'mariadb' && 'disable-ssl-verify-server-cert' || '' }}
+
+      - name: Configure MariaDB to connect via Unix socket
+        if: ${{ inputs.dbtype == 'mariadb' }}
+        run: |
+          # MariaDB 11.4+ prints a warning when MYSQL_PWD is used over TCP, because it
+          # auto-disables ssl-verify-server-cert. Connecting via Unix socket instead of
+          # TCP bypasses that check entirely.
+          echo "WP_CLI_TEST_DBHOST=localhost:${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock" >> "$GITHUB_ENV"
 
       - name: Prepare test database
         if: ${{ inputs.dbtype != 'sqlite' }}
