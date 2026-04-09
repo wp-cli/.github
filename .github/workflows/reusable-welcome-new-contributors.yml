@@ -16,38 +16,55 @@ jobs:
           result-encoding: string
           script: return String(context.payload.sender.type === 'Bot' || context.payload.sender.login?.endsWith('[bot]'));
 
-      - name: First Interaction
+      - name: Check if first PR
+        id: first-pr-check
         if: steps.bot-author-check.outputs.result != 'true'
-        uses: actions/first-interaction@1c4688942c71f71d4f5502a26ea67c331730fa4d # v3
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          # Not currently used but must be supplied.
-          issue_message: |
-            Hello! 👋
-          pr_message: |
-            Hello! 👋
+          result-encoding: string
+          script: |
+            const { data } = await github.rest.search.issuesAndPullRequests({
+              q: `is:pr repo:${context.repo.owner}/${context.repo.repo} author:${context.payload.sender.login}`,
+              per_page: 2,
+            });
+            return String(data.total_count <= 1);
 
-            Thanks for opening this pull request! Please check out our [contributing guidelines](https://make.wordpress.org/cli/handbook/contributions/contributing/). We appreciate you taking the initiative to contribute to this project.
-
-            Contributing isn't limited to just code. We encourage you to contribute in the way that best fits your abilities, by writing tutorials, giving a demo at your local meetup, helping other users with their support questions, or revising our documentation.
-
-            Here are some useful Composer commands to get you started:
-
-            * `composer install`: Install dependencies.
-            * `composer test`: Run the full test suite.
-            * `composer phpcs`: Check for code style violations.
-            * `composer phpcbf`: Automatically fix code style violations.
-            * `composer phpunit`: Run unit tests.
-            * `composer behat`: Run behavior-driven tests.
-
-            To run a single Behat test, you can use the following command:
-
-            ```bash
-            # Run all tests in a single file
-            composer behat features/some-feature.feature
-
-            # Run only a specific scenario (where 123 is the line number of the "Scenario:" title)
-            composer behat features/some-feature.feature:123
-            ```
-
-            You can find a list of all available Behat steps in our [handbook](https://make.wordpress.org/cli/handbook/references/behat-steps/).
+      - name: Welcome New Contributor
+        if: steps.bot-author-check.outputs.result != 'true' && steps.first-pr-check.outputs.result == 'true'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const message = [
+              'Hello! 👋',
+              '',
+              'Thanks for opening this pull request! Please check out our [contributing guidelines](https://make.wordpress.org/cli/handbook/contributions/contributing/). We appreciate you taking the initiative to contribute to this project.',
+              '',
+              "Contributing isn't limited to just code. We encourage you to contribute in the way that best fits your abilities, by writing tutorials, giving a demo at your local meetup, helping other users with their support questions, or revising our documentation.",
+              '',
+              'Here are some useful Composer commands to get you started:',
+              '',
+              '* `composer install`: Install dependencies.',
+              '* `composer test`: Run the full test suite.',
+              '* `composer phpcs`: Check for code style violations.',
+              '* `composer phpcbf`: Automatically fix code style violations.',
+              '* `composer phpunit`: Run unit tests.',
+              '* `composer behat`: Run behavior-driven tests.',
+              '',
+              'To run a single Behat test, you can use the following command:',
+              '',
+              '```bash',
+              '# Run all tests in a single file',
+              'composer behat features/some-feature.feature',
+              '',
+              '# Run only a specific scenario (where 123 is the line number of the "Scenario:" title)',
+              'composer behat features/some-feature.feature:123',
+              '```',
+              '',
+              'You can find a list of all available Behat steps in our [handbook](https://make.wordpress.org/cli/handbook/references/behat-steps/).',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: message,
+            });
