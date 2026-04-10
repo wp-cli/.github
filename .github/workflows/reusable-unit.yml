@@ -32,7 +32,7 @@ jobs:
         with:
           php-version: '${{ inputs.php }}'
           ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
-          extensions: zip
+          extensions: zip, fileinfo
           coverage: ${{ inputs.coverage && 'xdebug' || 'none' }}
           tools: composer,cs2pr
         env:

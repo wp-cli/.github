@@ -73,7 +73,7 @@ jobs:
         with:
           php-version: '${{ inputs.php }}'
           ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
-          extensions: gd, imagick, mysql, zip, pdo_sqlite, exif
+          extensions: gd, imagick, mysql, zip, pdo_sqlite, exif, fileinfo
           coverage: ${{ inputs.coverage && 'xdebug' || 'none' }}
           tools: composer
         env:
