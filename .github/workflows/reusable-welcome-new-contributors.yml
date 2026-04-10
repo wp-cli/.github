@@ -24,10 +24,10 @@ jobs:
           result-encoding: string
           script: |
             const { data } = await github.rest.search.issuesAndPullRequests({
-              q: `is:pr repo:${context.repo.owner}/${context.repo.repo} author:${context.payload.sender.login}`,
+              q: `is:pr repo:${context.repo.owner}/${context.repo.repo} author:${context.payload.sender.login} created:<${context.payload.pull_request.created_at}`,
               per_page: 2,
             });
-            return String(data.total_count <= 1);
+            return String(data.total_count === 0);
 
       - name: Welcome New Contributor
         if: steps.bot-author-check.outputs.result != 'true' && steps.first-pr-check.outputs.result == 'true'
