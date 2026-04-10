@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Get available labels
         id: get-labels
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const labels = await github.rest.issues.listLabelsForRepo({
@@ -105,7 +105,7 @@ jobs:
 
       - name: Apply labels
         if: steps.ai-triage.outputs.response != ''
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
           AVAILABLE_LABELS: ${{ env.AVAILABLE_LABELS }}
@@ -174,7 +174,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Find and dispatch triage for unlabeled items
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             // Get all open issues (includes PRs)
@@ -244,7 +244,7 @@ jobs:
     steps:
       - name: Get available labels
         id: get-labels
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const labels = await github.rest.issues.listLabelsForRepo({
@@ -257,7 +257,7 @@ jobs:
 
       - name: Get item details
         id: get-item
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const itemNumber = parseInt('${{ inputs.issue_number }}');
@@ -347,7 +347,7 @@ jobs:
 
       - name: Apply labels
         if: steps.ai-triage.outputs.response != ''
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
           ITEM_NUMBER: ${{ inputs.issue_number }}
