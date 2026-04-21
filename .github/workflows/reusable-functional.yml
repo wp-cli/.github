@@ -37,7 +37,7 @@ jobs:
     name: Behat | PHP ${{ inputs.php }} | WP ${{ inputs.wp }} | ${{ inputs.dbtype == 'sqlite' && 'SQLite' || inputs.dbtype == 'mariadb' && 'MariaDB' || 'MySQL' }}${{ inputs.object_cache == 'sqlite' && ' (Obj Cache)' || '' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
     runs-on: ${{ inputs.os || 'ubuntu-22.04' }}
 
-    continue-on-error: ${{ inputs.dbtype == 'sqlite' || inputs.dbtype == 'mariadb' || inputs.php == 'nightly' || startsWith( inputs.os, 'windows' ) || startsWith( inputs.os, 'macos' ) }}
+    continue-on-error: ${{ inputs.dbtype == 'mariadb' || inputs.php == 'nightly' || startsWith( inputs.os, 'windows' ) || startsWith( inputs.os, 'macos' ) }}
 
     env:
       MYSQL_HOST: 127.0.0.1
