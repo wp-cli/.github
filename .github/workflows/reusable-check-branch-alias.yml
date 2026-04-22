@@ -122,11 +122,14 @@ jobs:
       - name: Update composer.json
         if: steps.check_alias.outputs.needs_update == 'true'
         run: |
-          BRANCH_KEY="${{ steps.check_alias.outputs.branch_key }}"
-          EXPECTED_ALIAS="${{ steps.check_alias.outputs.expected_alias }}"
+          BRANCH_KEY="${STEPS_CHECK_ALIAS_OUTPUTS_BRANCH_KEY}"
+          EXPECTED_ALIAS="${STEPS_CHECK_ALIAS_OUTPUTS_EXPECTED_ALIAS}"
           
           # Update the branch-alias using composer command
           composer config "extra.branch-alias.$BRANCH_KEY" "$EXPECTED_ALIAS"
+        env:
+          STEPS_CHECK_ALIAS_OUTPUTS_BRANCH_KEY: ${{ steps.check_alias.outputs.branch_key }}
+          STEPS_CHECK_ALIAS_OUTPUTS_EXPECTED_ALIAS: ${{ steps.check_alias.outputs.expected_alias }}
 
       - name: Create Pull Request
         if: steps.check_alias.outputs.needs_update == 'true'

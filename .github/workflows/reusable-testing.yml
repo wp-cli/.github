@@ -358,8 +358,8 @@ jobs:
           if [[ $FILE_EXISTS == 'true' ]]; then
             echo "matrix=$(jq -c \
               --argjson with_coverage_flag "${{ inputs.with-coverage }}" \
-              --arg minimum_php "${{ inputs.minimum-php }}" \
-              --arg minimum_wp "${{ inputs.minimum-wp }}" \
+              --arg minimum_php "${INPUTS_MINIMUM_PHP}" \
+              --arg minimum_wp "${INPUTS_MINIMUM_WP}" \
               '
               .include |= (
                 map(
@@ -387,6 +387,8 @@ jobs:
         env:
           BASE_MATRIX: ${{ needs.get-matrix.outputs.matrix }}
           FILE_EXISTS: ${{ steps.check_files.outputs.files_exists == 'true' }}
+          INPUTS_MINIMUM_PHP: ${{ inputs.minimum-php }}
+          INPUTS_MINIMUM_WP: ${{ inputs.minimum-wp }}
 
   unit:
     needs: prepare-unit
@@ -424,8 +426,8 @@ jobs:
           if [[ $FILE_EXISTS == 'true' ]]; then
             echo "matrix=$(jq -c \
               --argjson with_coverage_flag "${{ inputs.with-coverage }}" \
-              --arg minimum_php "${{ inputs.minimum-php }}" \
-              --arg minimum_wp "${{ inputs.minimum-wp }}" \
+              --arg minimum_php "${INPUTS_MINIMUM_PHP}" \
+              --arg minimum_wp "${INPUTS_MINIMUM_WP}" \
               '
               # First, select only the versions that meet all minimum requirements
               .include |= (
@@ -457,6 +459,8 @@ jobs:
         env:
           BASE_MATRIX: ${{ needs.get-matrix.outputs.matrix }}
           FILE_EXISTS: ${{ steps.check_files.outputs.files_exists == 'true' }}
+          INPUTS_MINIMUM_PHP: ${{ inputs.minimum-php }}
+          INPUTS_MINIMUM_WP: ${{ inputs.minimum-wp }}
 
   functional:
     needs: prepare-functional
