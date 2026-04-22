@@ -345,6 +345,8 @@ jobs:
     steps:
       - name: Check out source code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Check existence of composer.json & phpunit.xml.dist files
         id: check_files
@@ -409,6 +411,8 @@ jobs:
     steps:
       - name: Check out source code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Check existence of composer.json & behat.yml files
         id: check_files
