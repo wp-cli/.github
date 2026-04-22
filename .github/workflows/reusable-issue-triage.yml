@@ -260,13 +260,11 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
-            const itemNumber = parseInt('${{ inputs.issue_number }}');
-
             // Try to get as an issue first (works for both issues and PRs)
             const issue = await github.rest.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: itemNumber
+              issue_number: context.issue.number,
             });
 
             const itemType = issue.data.pull_request ? 'pull request' : 'issue';
