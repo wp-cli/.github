@@ -31,7 +31,6 @@ jobs:
         with:
           fetch-depth: 0 # Fetch all history for all tags
           token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: false
 
       - name: Set up PHP
         uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
@@ -131,23 +130,40 @@ jobs:
           STEPS_CHECK_ALIAS_OUTPUTS_BRANCH_KEY: ${{ steps.check_alias.outputs.branch_key }}
           STEPS_CHECK_ALIAS_OUTPUTS_EXPECTED_ALIAS: ${{ steps.check_alias.outputs.expected_alias }}
 
-      - name: Create Pull Request
+      - name: Commit and Create Pull Request
         if: steps.check_alias.outputs.needs_update == 'true'
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          base: ${{ github.event.repository.default_branch }}
-          commit-message: "Update branch-alias to ${{ steps.check_alias.outputs.expected_alias }}"
-          title: "Update branch-alias to ${{ steps.check_alias.outputs.expected_alias }}"
-          body: |
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_BODY: |
             This PR updates the Composer `branch-alias` configuration to reflect the latest release.
-            
+
             - Latest release: ${{ steps.check_alias.outputs.latest_tag }}
             - Previous branch-alias: `${{ steps.check_alias.outputs.current_alias }}`
             - Updated branch-alias: `${{ steps.check_alias.outputs.expected_alias }}`
-            
+
             The branch-alias should point to the major development version for the latest major release.
-          branch: update-branch-alias
-          delete-branch: true
-          labels: |
-            automated-pr
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git checkout -b update-branch-alias
+            git add composer.json
+            git commit -m "Update branch-alias to ${{ steps.check_alias.outputs.expected_alias }}"
+            git push -f origin update-branch-alias
+            
+            PR_NUMBER=$(gh pr list --head update-branch-alias --json number --jq '.[0].number // empty')
+            if [ -z "$PR_NUMBER" ]; then
+              gh pr create \
+                --title "Update branch-alias to ${{ steps.check_alias.outputs.expected_alias }}" \
+                --body "$PR_BODY" \
+                --label "automated-pr" \
+                --base "${{ github.event.repository.default_branch }}" \
+                --head "update-branch-alias"
+            else
+              gh pr edit "$PR_NUMBER" \
+                --title "Update branch-alias to ${{ steps.check_alias.outputs.expected_alias }}" \
+                --body "$PR_BODY" \
+                --add-label "automated-pr" \
+                --base "${{ github.event.repository.default_branch }}"
+            fi
+          fi
