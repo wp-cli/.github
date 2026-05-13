@@ -53,7 +53,7 @@ jobs:
 
       - name: Analyze with AI
         id: ai-triage
-        uses: actions/ai-inference@e09e65981758de8b2fdab13c2bfb7c7d5493b0b6 # v2
+        uses: actions/ai-inference@17ff458cb182449bbb2e43701fcd98f6af8f6570 # v2
         with:
           prompt: |
             ## Role
@@ -293,7 +293,7 @@ jobs:
 
       - name: Analyze with AI
         id: ai-triage
-        uses: actions/ai-inference@e09e65981758de8b2fdab13c2bfb7c7d5493b0b6 # v2
+        uses: actions/ai-inference@17ff458cb182449bbb2e43701fcd98f6af8f6570 # v2
         with:
           prompt: |
             ## Role
