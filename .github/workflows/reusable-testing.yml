@@ -55,22 +55,22 @@ jobs:
             },
             {
               "php": "7.2",
-              "wp": "latest",
+              "wp": "6.9",
               "mysql": "mysql-8.0"
             },
             {
               "php": "7.2",
-              "wp": "latest",
+              "wp": "6.9",
               "dbtype": "sqlite"
             },
             {
               "php": "7.3",
-              "wp": "latest",
+              "wp": "6.9",
               "mysql": "mysql-8.0"
             },
             {
               "php": "7.3",
-              "wp": "latest",
+              "wp": "6.9",
               "dbtype": "sqlite"
             },
             {
