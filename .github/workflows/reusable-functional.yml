@@ -115,6 +115,7 @@ jobs:
           my-cnf: |
             ${{ steps.mysql-config.outputs.auth-config || 'default_authentication_plugin=mysql_native_password' }}
             ${{ inputs.dbtype == 'mariadb' && '[client]' || '' }}
+            ${{ inputs.dbtype == 'mariadb' && 'ssl = OFF' || '' }}
             ${{ inputs.dbtype == 'mariadb' && 'disable-ssl-verify-server-cert' || '' }}
 
       - name: Remove system MySQL binary
