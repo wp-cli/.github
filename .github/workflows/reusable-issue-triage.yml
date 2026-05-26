@@ -37,7 +37,7 @@ jobs:
 
       - name: Analyze with AI
         id: ai-triage
-        uses: actions/ai-inference@17ff458cb182449bbb2e43701fcd98f6af8f6570 # v2
+        uses: actions/ai-inference@a7805884c80886efc241e94a5351df715968a0ad # v2
         env:
           AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
           ITEM_TITLE: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.title || github.event.issue.title }}
@@ -266,7 +266,7 @@ jobs:
 
       - name: Analyze with AI
         id: ai-triage
-        uses: actions/ai-inference@17ff458cb182449bbb2e43701fcd98f6af8f6570 # v2
+        uses: actions/ai-inference@a7805884c80886efc241e94a5351df715968a0ad # v2
         env:
           AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
           ITEM_TITLE: ${{ fromJSON(steps.get-item.outputs.result).title }}
