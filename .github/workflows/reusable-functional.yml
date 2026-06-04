@@ -115,7 +115,7 @@ jobs:
           my-cnf: |
             ${{ steps.mysql-config.outputs.auth-config || 'default_authentication_plugin=mysql_native_password' }}
             ${{ inputs.dbtype == 'mariadb' && '[client]' || '' }}
-            ${{ inputs.dbtype == 'mariadb' && 'disable-ssl-verify-server-cert' || '' }}
+            ${{ inputs.dbtype == 'mariadb' && 'skip-ssl' || '' }}
 
       - name: Remove system MySQL binary
         if: ${{ inputs.dbtype != 'sqlite' }}
