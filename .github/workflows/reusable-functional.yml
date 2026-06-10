@@ -118,7 +118,7 @@ jobs:
             ${{ inputs.dbtype == 'mariadb' && 'disable-ssl-verify-server-cert' || '' }}
 
       - name: Remove system MySQL binary
-        if: ${{ inputs.dbtype != 'sqlite' }}
+        if: ${{ inputs.dbtype != 'sqlite' && !startsWith(inputs.os, 'windows') && !startsWith(inputs.os, 'macos') }}
         run: sudo rm -f /usr/bin/mysql /usr/bin/mysqldump
 
       - name: Prepare test database
