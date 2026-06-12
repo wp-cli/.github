@@ -35,25 +35,14 @@ jobs:
             const labelNames = labels.data.map(label => label.name);
             return labelNames.join(', ');
 
-      - name: Set environment variables
+      - name: Analyze with AI
+        id: ai-triage
+        uses: actions/ai-inference@a7805884c80886efc241e94a5351df715968a0ad # v2
         env:
+          AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
           ITEM_TITLE: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.title || github.event.issue.title }}
           ITEM_BODY: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.body || github.event.issue.body }}
           ITEM_TYPE: ${{ github.event_name == 'pull_request_target' && 'pull request' || 'issue' }}
-          LABELS_RESULT: ${{ steps.get-labels.outputs.result }}
-        run: |
-          {
-            echo "AVAILABLE_LABELS=${LABELS_RESULT}"
-            echo "ITEM_TITLE=${ITEM_TITLE}"
-            echo "ITEM_TYPE=${ITEM_TYPE}"
-            echo "ITEM_BODY<<EOF"
-            echo "${ITEM_BODY}"
-            echo "EOF"
-          } >> "$GITHUB_ENV"
-
-      - name: Analyze with AI
-        id: ai-triage
-        uses: actions/ai-inference@17ff458cb182449bbb2e43701fcd98f6af8f6570 # v2
         with:
           prompt: |
             ## Role
@@ -108,7 +97,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
-          AVAILABLE_LABELS: ${{ env.AVAILABLE_LABELS }}
+          AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
         with:
           script: |
             const response = process.env.AI_RESPONSE;
@@ -275,25 +264,14 @@ jobs:
               type: itemType
             };
 
-      - name: Set environment variables
+      - name: Analyze with AI
+        id: ai-triage
+        uses: actions/ai-inference@a7805884c80886efc241e94a5351df715968a0ad # v2
         env:
+          AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
           ITEM_TITLE: ${{ fromJSON(steps.get-item.outputs.result).title }}
           ITEM_BODY: ${{ fromJSON(steps.get-item.outputs.result).body }}
           ITEM_TYPE: ${{ fromJSON(steps.get-item.outputs.result).type }}
-          LABELS_RESULT: ${{ steps.get-labels.outputs.result }}
-        run: |
-          {
-            echo "AVAILABLE_LABELS=${LABELS_RESULT}"
-            echo "ITEM_TITLE=${ITEM_TITLE}"
-            echo "ITEM_TYPE=${ITEM_TYPE}"
-            echo "ITEM_BODY<<EOF"
-            echo "${ITEM_BODY}"
-            echo "EOF"
-          } >> "$GITHUB_ENV"
-
-      - name: Analyze with AI
-        id: ai-triage
-        uses: actions/ai-inference@17ff458cb182449bbb2e43701fcd98f6af8f6570 # v2
         with:
           prompt: |
             ## Role
@@ -349,7 +327,7 @@ jobs:
         env:
           AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
           ITEM_NUMBER: ${{ inputs.issue_number }}
-          AVAILABLE_LABELS: ${{ env.AVAILABLE_LABELS }}
+          AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
         with:
           script: |
             const response = process.env.AI_RESPONSE;
