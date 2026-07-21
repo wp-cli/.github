@@ -51,16 +51,6 @@ jobs:
       WP_CLI_TEST_OBJECT_CACHE: ${{ inputs.object_cache }}
 
     steps:
-      # The Behat suite spawns a large number of short-lived `wp`/`php`
-      # processes and writes many files per scenario. On the Windows runner,
-      # Defender's real-time scanning inspects each of these, which slows the
-      # run down by several times compared to Linux. Turning it off for the
-      # duration of this ephemeral job cuts the wall-clock time dramatically.
-      - name: Disable Windows Defender real-time scanning
-        if: ${{ startsWith(inputs.os, 'windows') }}
-        shell: pwsh
-        run: Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue
-
       - name: Check out source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
