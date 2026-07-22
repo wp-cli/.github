@@ -51,6 +51,28 @@ jobs:
       WP_CLI_TEST_OBJECT_CACHE: ${{ inputs.object_cache }}
 
     steps:
+      # The Behat suite is heavily I/O- and process-bound: every scenario
+      # installs WordPress and spawns many short-lived `wp` processes. On the
+      # GitHub Windows runner those working files land on the slow C: drive.
+      # Relocating them to the fast D: drive roughly halves the Behat run time.
+      # The wp-cli-tests framework derives the WP install dir, all core/install/
+      # SQLite caches and HOME/COMPOSER_HOME (the WP-CLI cache) from
+      # sys_get_temp_dir(), and forwards TEMP/TMP to the spawned `wp` processes,
+      # so pointing TEMP/TMP at D: relocates all of it. Guarded so it is a no-op
+      # if the D: drive is ever unavailable.
+      - name: Use the fast D drive for temporary files
+        if: ${{ startsWith(inputs.os, 'windows') }}
+        shell: pwsh
+        run: |
+          if (Test-Path 'D:\') {
+            New-Item -ItemType Directory -Force -Path 'D:\Temp' | Out-Null
+            "TEMP=D:\Temp" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            "TMP=D:\Temp"  | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+            Write-Host 'Using D:\Temp for temporary files.'
+          } else {
+            Write-Host 'D: drive not available; using the default temp location.'
+          }
+
       - name: Check out source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

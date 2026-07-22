@@ -317,7 +317,7 @@ jobs:
               "php": "8.5",
               "wp": "trunk",
               "dbtype": "sqlite",
-              "os": "windows-latest"
+              "os": "windows-2022"
             }
           ]
         }
