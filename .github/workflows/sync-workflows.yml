@@ -10,7 +10,7 @@ on:
     - cron:  '*/10 * * * *' # Run every 10 minutes.
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
 
@@ -18,6 +18,8 @@ jobs:
     name: Sync GitHub Actions workflows
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'wp-cli' }}
+    permissions:
+      contents: write
     steps:
       - name: Sync files
         uses: adrianjost/files-sync-action@55d577a25b7106ebc3001353d981ecf8b0150df4 # v2.1.0
@@ -83,6 +85,8 @@ jobs:
     name: Sync Dependabot configuration
     runs-on: ubuntu-latest
     if: ${{ github.repository_owner == 'wp-cli' }}
+    permissions:
+      contents: write
     steps:
       - name: Sync files
         uses: adrianjost/files-sync-action@55d577a25b7106ebc3001353d981ecf8b0150df4 # v2.1.0
