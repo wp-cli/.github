@@ -160,14 +160,12 @@ jobs:
               gh pr create \
                 --title "Update branch-alias to ${STEPS_CHECK_ALIAS_OUTPUTS_EXPECTED_ALIAS}" \
                 --body "$PR_BODY" \
-                --label "automated-pr" \
                 --base "${GITHUB_EVENT_REPOSITORY_DEFAULT_BRANCH}" \
                 --head "update-branch-alias"
             else
               gh pr edit "$PR_NUMBER" \
                 --title "Update branch-alias to ${STEPS_CHECK_ALIAS_OUTPUTS_EXPECTED_ALIAS}" \
                 --body "$PR_BODY" \
-                --add-label "automated-pr" \
                 --base "${GITHUB_EVENT_REPOSITORY_DEFAULT_BRANCH}"
             fi
           fi
