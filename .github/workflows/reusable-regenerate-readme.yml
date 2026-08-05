@@ -52,7 +52,7 @@ jobs:
 
       - name: Regenerate README.md file
         run: |
-          wp package install "wp-cli/scaffold-package-command:^2"
+          wp package install "wp-cli/scaffold-package-command:^3"
           wp scaffold package-readme --branch=${GITHUB_EVENT_REPOSITORY_DEFAULT_BRANCH} --force .
         env:
           GITHUB_EVENT_REPOSITORY_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
