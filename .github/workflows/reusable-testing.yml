@@ -39,7 +39,7 @@ jobs:
   prepare:
     name: Prepare test matrices
     runs-on: ubuntu-22.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     outputs:
       unit: ${{ steps.unit.outputs.matrix }}
       functional: ${{ steps.functional.outputs.matrix }}
@@ -49,6 +49,60 @@ jobs:
         with:
           persist-credentials: false
           show-progress: ${{ runner.debug == '1' && 'true' || 'false' }}
+          # Enough history to diff the change against its base. Other events do
+          # not inspect a diff and do not need it.
+          fetch-depth: ${{ ( github.event_name == 'pull_request' || github.event_name == 'push' ) && 0 || 1 }}
+
+      # A change that only touches documentation cannot affect the test result, so
+      # there is no reason to spend 50 jobs on it. This is deliberately a deny list
+      # rather than an allow list: the reusable workflow cannot know how any given
+      # package lays out its source, so anything not provably irrelevant still runs
+      # the full suite. Every failure path below also falls back to testing.
+      - name: Determine whether the change is documentation only
+        id: docs-only
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          # Scheduled and manually dispatched runs always test everything.
+          if [ "$EVENT_NAME" != 'pull_request' ] && [ "$EVENT_NAME" != 'push' ]; then
+            echo 'Not a pull request or push; testing everything.'
+            echo "value=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # A newly created branch reports an all-zero base.
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = '0000000000000000000000000000000000000000' ]; then
+            echo 'No usable base commit; testing everything.'
+            echo "value=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! CHANGED=$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}" 2>/dev/null); then
+            echo "Could not diff ${BASE_SHA}...${HEAD_SHA}; testing everything."
+            echo "value=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo 'Changed files:'
+          printf '%s\n' "$CHANGED"
+
+          RELEVANT=$(printf '%s\n' "$CHANGED" | grep -Ev \
+            -e '\.md$' \
+            -e '^\.github/ISSUE_TEMPLATE/' \
+            -e '^\.github/(CODEOWNERS|FUNDING\.yml)$' \
+            -e '^(LICENSE|\.editorconfig|\.gitattributes|\.gitignore)$' \
+            || true)
+
+          if [ -z "$RELEVANT" ]; then
+            echo 'Only documentation and repository metadata changed; skipping the test matrix.'
+            echo "value=true" >> "$GITHUB_OUTPUT"
+          else
+            echo 'Test-relevant files changed:'
+            printf '%s\n' "$RELEVANT"
+            echo "value=false" >> "$GITHUB_OUTPUT"
+          fi
 
       # Entries flagged with "nightly": true are the ones the test jobs run with
       # `continue-on-error`. They can never gate a merge, so running them on every
@@ -375,11 +429,12 @@ jobs:
         env:
           BASE_MATRIX: ${{ steps.base.outputs.matrix }}
           FILE_EXISTS: ${{ steps.check_unit_files.outputs.files_exists }}
+          DOCS_ONLY: ${{ steps.docs-only.outputs.value }}
           INPUTS_MINIMUM_PHP: ${{ inputs.minimum-php }}
           INPUTS_MINIMUM_WP: ${{ inputs.minimum-wp }}
           WITH_COVERAGE: ${{ inputs.with-coverage }}
         run: |
-          if [[ $FILE_EXISTS == 'true' ]]; then
+          if [[ $FILE_EXISTS == 'true' && $DOCS_ONLY != 'true' ]]; then
             echo "matrix=$(jq -c \
               --argjson with_coverage_flag "${WITH_COVERAGE}" \
               --arg minimum_php "${INPUTS_MINIMUM_PHP}" \
@@ -414,11 +469,12 @@ jobs:
         env:
           BASE_MATRIX: ${{ steps.base.outputs.matrix }}
           FILE_EXISTS: ${{ steps.check_functional_files.outputs.files_exists }}
+          DOCS_ONLY: ${{ steps.docs-only.outputs.value }}
           INPUTS_MINIMUM_PHP: ${{ inputs.minimum-php }}
           INPUTS_MINIMUM_WP: ${{ inputs.minimum-wp }}
           WITH_COVERAGE: ${{ inputs.with-coverage }}
         run: |
-          if [[ $FILE_EXISTS == 'true' ]]; then
+          if [[ $FILE_EXISTS == 'true' && $DOCS_ONLY != 'true' ]]; then
             echo "matrix=$(jq -c \
               --argjson with_coverage_flag "${WITH_COVERAGE}" \
               --arg minimum_php "${INPUTS_MINIMUM_PHP}" \
