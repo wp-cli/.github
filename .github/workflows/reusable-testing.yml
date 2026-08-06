@@ -29,335 +29,359 @@ permissions:
 
 # Cancels all previous workflow runs for the same branch that have not yet completed.
 concurrency:
-  # The concurrency group contains the workflow name and the branch name.
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Pull requests group per branch so a new push supersedes the previous run.
+  # Everything else groups per event and commit, so a push to the default branch
+  # and the nightly schedule never cancel each other.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
-  get-matrix:
-    name: Get base test matrix
+  prepare:
+    name: Prepare test matrices
     runs-on: ubuntu-22.04
+    timeout-minutes: 5
     outputs:
-      matrix: ${{ steps.base-matrix.outputs.matrix }}
-    steps:
-    - name: Set matrix
-      id: base-matrix
-      env:
-        ADDITIONAL_MATRIX: ${{ inputs.matrix }}
-      run: |
-        MATRIX=$(cat << EOF
-        {
-          "include": [
-            {
-              "php": "7.2",
-              "wp": "4.9",
-              "mysql": "mysql-5.6"
-            },
-            {
-              "php": "7.2",
-              "wp": "6.9",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "7.2",
-              "wp": "6.9",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "7.3",
-              "wp": "6.9",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "7.3",
-              "wp": "6.9",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "7.4",
-              "wp": "latest",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "7.4",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.0",
-              "wp": "latest",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "8.0",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.1",
-              "wp": "latest",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "8.1",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.2",
-              "wp": "latest",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "8.2",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.3",
-              "wp": "latest",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "8.3",
-              "wp": "latest",
-              "mysql": "mysql-8.4"
-            },
-            {
-              "php": "8.3",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.3",
-              "wp": "latest",
-              "mysql": "mariadb-11.4",
-              "dbtype": "mariadb"
-            },
-            {
-              "php": "8.4",
-              "wp": "latest",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "8.4",
-              "wp": "latest",
-              "mysql": "mysql-8.4"
-            },
-            {
-              "php": "8.4",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.4",
-              "wp": "latest",
-              "mysql": "mariadb-11.4",
-              "dbtype": "mariadb"
-            },
-            {
-              "php": "8.5",
-              "wp": "latest",
-              "mysql": "mysql-8.0",
-              "coverage": true
-            },
-            {
-              "php": "8.5",
-              "wp": "latest",
-              "mysql": "mysql-8.4"
-            },
-            {
-              "php": "8.5",
-              "wp": "latest",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.5",
-              "wp": "latest",
-              "mysql": "mariadb-11.4",
-              "dbtype": "mariadb"
-            },
-            {
-              "php": "7.4",
-              "wp": "trunk",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "7.4",
-              "wp": "trunk",
-              "mysql": "mysql-5.7"
-            },
-            {
-              "php": "7.4",
-              "wp": "trunk",
-              "mysql": "mysql-5.6"
-            },
-            {
-              "php": "7.4",
-              "wp": "trunk",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "8.0",
-              "wp": "trunk",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "8.0",
-              "wp": "trunk",
-              "mysql": "mysql-5.7"
-            },
-            {
-              "php": "8.0",
-              "wp": "trunk",
-              "mysql": "mysql-5.6"
-            },
-            {
-              "php": "8.1",
-              "wp": "trunk",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "8.2",
-              "wp": "trunk",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "8.3",
-              "wp": "trunk",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "8.3",
-              "wp": "trunk",
-              "mysql": "mysql-8.4"
-            },
-            {
-              "php": "8.3",
-              "wp": "trunk",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.3",
-              "wp": "trunk",
-              "mysql": "mariadb-11.4",
-              "dbtype": "mariadb"
-            },
-            {
-              "php": "8.4",
-              "wp": "trunk",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "8.4",
-              "wp": "trunk",
-              "mysql": "mysql-8.4"
-            },
-            {
-              "php": "8.4",
-              "wp": "trunk",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.4",
-              "wp": "trunk",
-              "mysql": "mariadb-11.4",
-              "dbtype": "mariadb"
-            },
-            {
-              "php": "8.5",
-              "wp": "trunk",
-              "mysql": "mysql-8.0"
-            },
-            {
-              "php": "8.5",
-              "wp": "trunk",
-              "mysql": "mysql-8.4"
-            },
-            {
-              "php": "8.5",
-              "wp": "trunk",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.5",
-              "wp": "trunk",
-              "mysql": "mariadb-11.4",
-              "dbtype": "mariadb"
-            },
-            {
-              "php": "nightly",
-              "wp": "trunk",
-              "mysql": "mysql-8.4"
-            },
-            {
-              "php": "nightly",
-              "wp": "trunk",
-              "dbtype": "sqlite"
-            },
-            {
-              "php": "8.5",
-              "wp": "latest",
-              "dbtype": "sqlite",
-              "object_cache": "sqlite"
-            },
-            {
-              "php": "8.5",
-              "wp": "trunk",
-              "dbtype": "sqlite",
-              "object_cache": "sqlite"
-            },
-            {
-              "php": "8.5",
-              "wp": "trunk",
-              "dbtype": "sqlite",
-              "os": "macos-latest"
-            },
-            {
-              "php": "8.5",
-              "wp": "trunk",
-              "dbtype": "sqlite",
-              "os": "windows-2022"
-            }
-          ]
-        }
-        EOF
-        )
-        MERGED_MATRIX=$(echo "$MATRIX" "$ADDITIONAL_MATRIX" | jq -s '
-          . as $root |
-          (($root[0].exclude // []) + ($root[1].exclude // [])) as $excludes |
-          {
-            include: (
-              (.[0].include + .[1].include | map(if .os == null then .os = "" else . end)) |
-              map(. as $item | select($excludes | any(. as $rule | all($rule|keys[]; $item[.] == $rule[.])) | not)) |
-              unique
-            )
-          }
-        ')
-        echo matrix=$MERGED_MATRIX >> $GITHUB_OUTPUT
-
-  prepare-unit:
-    name: Prepare matrix for unit tests
-    needs: get-matrix
-    runs-on: ubuntu-22.04
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      unit: ${{ steps.unit.outputs.matrix }}
+      functional: ${{ steps.functional.outputs.matrix }}
     steps:
       - name: Check out source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          show-progress: ${{ runner.debug == '1' && 'true' || 'false' }}
+
+      # Entries flagged with "nightly": true are the ones the test jobs run with
+      # `continue-on-error`. They can never gate a merge, so running them on every
+      # pull request spends runner time without producing a signal. They run on the
+      # nightly schedule and on manual dispatch instead.
+      - name: Build the base matrix
+        id: base
+        env:
+          ADDITIONAL_MATRIX: ${{ inputs.matrix }}
+          INCLUDE_NIGHTLY: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          MATRIX=$(cat << 'EOF'
+          {
+            "include": [
+              {
+                "php": "7.2",
+                "wp": "4.9",
+                "mysql": "mysql-5.6"
+              },
+              {
+                "php": "7.2",
+                "wp": "6.9",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "7.2",
+                "wp": "6.9",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "7.3",
+                "wp": "6.9",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "7.3",
+                "wp": "6.9",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "7.4",
+                "wp": "latest",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "7.4",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.0",
+                "wp": "latest",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.0",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.1",
+                "wp": "latest",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.1",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.2",
+                "wp": "latest",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.2",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.3",
+                "wp": "latest",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.3",
+                "wp": "latest",
+                "mysql": "mysql-8.4"
+              },
+              {
+                "php": "8.3",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.3",
+                "wp": "latest",
+                "mysql": "mariadb-11.4",
+                "dbtype": "mariadb",
+                "nightly": true
+              },
+              {
+                "php": "8.4",
+                "wp": "latest",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.4",
+                "wp": "latest",
+                "mysql": "mysql-8.4"
+              },
+              {
+                "php": "8.4",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.4",
+                "wp": "latest",
+                "mysql": "mariadb-11.4",
+                "dbtype": "mariadb",
+                "nightly": true
+              },
+              {
+                "php": "8.5",
+                "wp": "latest",
+                "mysql": "mysql-8.0",
+                "coverage": true
+              },
+              {
+                "php": "8.5",
+                "wp": "latest",
+                "mysql": "mysql-8.4"
+              },
+              {
+                "php": "8.5",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.5",
+                "wp": "latest",
+                "mysql": "mariadb-11.4",
+                "dbtype": "mariadb",
+                "nightly": true
+              },
+              {
+                "php": "7.4",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "7.4",
+                "wp": "trunk",
+                "mysql": "mysql-5.7"
+              },
+              {
+                "php": "7.4",
+                "wp": "trunk",
+                "mysql": "mysql-5.6"
+              },
+              {
+                "php": "8.0",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.0",
+                "wp": "trunk",
+                "mysql": "mysql-5.7"
+              },
+              {
+                "php": "8.0",
+                "wp": "trunk",
+                "mysql": "mysql-5.6"
+              },
+              {
+                "php": "8.1",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.2",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.3",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.3",
+                "wp": "trunk",
+                "mysql": "mysql-8.4"
+              },
+              {
+                "php": "8.3",
+                "wp": "trunk",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.3",
+                "wp": "trunk",
+                "mysql": "mariadb-11.4",
+                "dbtype": "mariadb",
+                "nightly": true
+              },
+              {
+                "php": "8.4",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.4",
+                "wp": "trunk",
+                "mysql": "mysql-8.4"
+              },
+              {
+                "php": "8.4",
+                "wp": "trunk",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.4",
+                "wp": "trunk",
+                "mysql": "mariadb-11.4",
+                "dbtype": "mariadb",
+                "nightly": true
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "mysql": "mysql-8.4"
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "mysql": "mariadb-11.4",
+                "dbtype": "mariadb",
+                "nightly": true
+              },
+              {
+                "php": "nightly",
+                "wp": "trunk",
+                "mysql": "mysql-8.4",
+                "nightly": true
+              },
+              {
+                "php": "nightly",
+                "wp": "trunk",
+                "dbtype": "sqlite",
+                "nightly": true
+              },
+              {
+                "php": "8.5",
+                "wp": "latest",
+                "dbtype": "sqlite",
+                "object_cache": "sqlite"
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "dbtype": "sqlite",
+                "object_cache": "sqlite"
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "dbtype": "sqlite",
+                "os": "macos-latest",
+                "nightly": true
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "dbtype": "sqlite",
+                "os": "windows-2022",
+                "nightly": true
+              }
+            ]
+          }
+          EOF
+          )
+          MERGED_MATRIX=$(printf '%s\n%s\n' "$MATRIX" "$ADDITIONAL_MATRIX" | jq -sc \
+            --argjson include_nightly "$INCLUDE_NIGHTLY" '
+            . as $root |
+            (($root[0].exclude // []) + ($root[1].exclude // [])) as $excludes |
+            {
+              include: (
+                (.[0].include + .[1].include | map(if .os == null then .os = "" else . end)) |
+                map(. as $item | select($excludes | any(. as $rule | all($rule|keys[]; $item[.] == $rule[.])) | not)) |
+                unique |
+
+                # Drop the soft-failing entries unless this is a nightly or manual run.
+                # Entries supplied through the `matrix` input have no `nightly` key and
+                # are therefore always kept.
+                map(select($include_nightly or (.nightly // false) == false))
+              )
+            }
+          ')
+          echo "matrix=${MERGED_MATRIX}" >> "$GITHUB_OUTPUT"
 
       - name: Check existence of composer.json & phpunit.xml.dist files
-        id: check_files
+        id: check_unit_files
         run: echo "files_exists=$([ -f composer.json ] && [ -f phpunit.xml.dist ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
-      - name: Set matrix
-        id: set-matrix
+      - name: Check existence of composer.json & behat.yml files
+        id: check_functional_files
+        run: echo "files_exists=$([ -f composer.json ] && [ -f behat.yml ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Set unit test matrix
+        id: unit
+        env:
+          BASE_MATRIX: ${{ steps.base.outputs.matrix }}
+          FILE_EXISTS: ${{ steps.check_unit_files.outputs.files_exists }}
+          INPUTS_MINIMUM_PHP: ${{ inputs.minimum-php }}
+          INPUTS_MINIMUM_WP: ${{ inputs.minimum-wp }}
+          WITH_COVERAGE: ${{ inputs.with-coverage }}
         run: |
           if [[ $FILE_EXISTS == 'true' ]]; then
             echo "matrix=$(jq -c \
-              --argjson with_coverage_flag "${{ inputs.with-coverage }}" \
+              --argjson with_coverage_flag "${WITH_COVERAGE}" \
               --arg minimum_php "${INPUTS_MINIMUM_PHP}" \
               --arg minimum_wp "${INPUTS_MINIMUM_WP}" \
               '
@@ -380,52 +404,23 @@ jobs:
                 # Finally, get the unique entries
                 unique_by([.php, .os])
               )
-              ' <<< "$BASE_MATRIX")" >> $GITHUB_OUTPUT
+              ' <<< "$BASE_MATRIX")" >> "$GITHUB_OUTPUT"
           else
-            echo "matrix=" >> $GITHUB_OUTPUT
+            echo "matrix=" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Set functional test matrix
+        id: functional
         env:
-          BASE_MATRIX: ${{ needs.get-matrix.outputs.matrix }}
-          FILE_EXISTS: ${{ steps.check_files.outputs.files_exists == 'true' }}
+          BASE_MATRIX: ${{ steps.base.outputs.matrix }}
+          FILE_EXISTS: ${{ steps.check_functional_files.outputs.files_exists }}
           INPUTS_MINIMUM_PHP: ${{ inputs.minimum-php }}
           INPUTS_MINIMUM_WP: ${{ inputs.minimum-wp }}
-
-  unit:
-    needs: prepare-unit
-    if: ${{ needs.prepare-unit.outputs.matrix != '' }}
-    name: Unit
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.prepare-unit.outputs.matrix) }}
-    uses: ./.github/workflows/reusable-unit.yml
-    secrets: inherit
-    with:
-      php: ${{ matrix.php }}
-      coverage: ${{ matrix.coverage == true }}
-      os: ${{ matrix.os || '' }}
-
-  prepare-functional:
-    name: Prepare matrix for functional tests
-    needs: get-matrix
-    runs-on: ubuntu-22.04
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Check out source code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Check existence of composer.json & behat.yml files
-        id: check_files
-        run: echo "files_exists=$([ -f composer.json ] && [ -f behat.yml ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
-      - name: Set matrix
-        id: set-matrix
+          WITH_COVERAGE: ${{ inputs.with-coverage }}
         run: |
           if [[ $FILE_EXISTS == 'true' ]]; then
             echo "matrix=$(jq -c \
-              --argjson with_coverage_flag "${{ inputs.with-coverage }}" \
+              --argjson with_coverage_flag "${WITH_COVERAGE}" \
               --arg minimum_php "${INPUTS_MINIMUM_PHP}" \
               --arg minimum_wp "${INPUTS_MINIMUM_WP}" \
               '
@@ -452,23 +447,32 @@ jobs:
                   ).wp |= $minimum_wp
                 )
               )
-              ' <<< "$BASE_MATRIX" )" >> $GITHUB_OUTPUT
+              ' <<< "$BASE_MATRIX" )" >> "$GITHUB_OUTPUT"
           else
-            echo "matrix=" >> $GITHUB_OUTPUT
+            echo "matrix=" >> "$GITHUB_OUTPUT"
           fi
-        env:
-          BASE_MATRIX: ${{ needs.get-matrix.outputs.matrix }}
-          FILE_EXISTS: ${{ steps.check_files.outputs.files_exists == 'true' }}
-          INPUTS_MINIMUM_PHP: ${{ inputs.minimum-php }}
-          INPUTS_MINIMUM_WP: ${{ inputs.minimum-wp }}
+
+  unit:
+    needs: prepare
+    if: ${{ needs.prepare.outputs.unit != '' }}
+    name: Unit
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare.outputs.unit) }}
+    uses: ./.github/workflows/reusable-unit.yml
+    secrets: inherit
+    with:
+      php: ${{ matrix.php }}
+      coverage: ${{ matrix.coverage == true }}
+      os: ${{ matrix.os || '' }}
 
   functional:
-    needs: prepare-functional
-    if: ${{ needs.prepare-functional.outputs.matrix != '' }}
+    needs: prepare
+    if: ${{ needs.prepare.outputs.functional != '' }}
     name: Behat
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.prepare-functional.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.prepare.outputs.functional) }}
     uses: ./.github/workflows/reusable-functional.yml
     secrets: inherit
     with:
