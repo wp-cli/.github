@@ -511,7 +511,9 @@ jobs:
   unit:
     needs: prepare
     if: ${{ needs.prepare.outputs.unit != '' }}
-    name: Unit
+    # The calling job's name is what the run view groups by, so it carries the
+    # grouping key. The called workflow names the individual leg within the group.
+    name: Unit | PHP ${{ matrix.php }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare.outputs.unit) }}
@@ -525,7 +527,9 @@ jobs:
   functional:
     needs: prepare
     if: ${{ needs.prepare.outputs.functional != '' }}
-    name: Behat
+    # Groups the Behat legs by PHP version, so the run view shows one collapsible
+    # entry per version instead of a single flat list of 41 jobs.
+    name: Behat | PHP ${{ matrix.php }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare.outputs.functional) }}
