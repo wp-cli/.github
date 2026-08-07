@@ -19,6 +19,36 @@ This repository contains reusable GitHub Actions workflows that are automaticall
 - **Regenerate README** (`regenerate-readme.yml`) - Automatically regenerates README.md files from source
 - **Check Branch Alias** (`check-branch-alias.yml`) - Monitors and updates Composer branch-alias configuration
 
+#### Test workflows
+
+A package's `testing.yml` can call the test workflows in one of two shapes.
+
+The **wrapped** shape is the default and needs three lines:
+
+```yaml
+jobs:
+  test:
+    uses: wp-cli/.github/.github/workflows/reusable-testing.yml@main
+    with:
+      minimum-php: '8.0'
+```
+
+The **fanned-out** shape calls `reusable-prepare-matrix.yml` for the matrix and
+runs the legs from the package's own jobs. See this repository's own
+`testing.yml` for a complete example.
+
+The only thing it buys is presentation: a matrix becomes a collapsible group in
+the Actions run view only when it sits on a job declared in the workflow the run
+belongs to. In the wrapped shape the matrix is one level down and is not
+surfaced, so all fifty legs appear as one flat list. Fanning out puts the matrix
+at the top level, so the run view collapses to one entry per PHP version.
+
+It costs about thirty lines in a file that is not synced, so every future change
+to the fan-out has to be repeated in each package that adopts it. The leg names
+are self-describing in both shapes and repeat the PHP version inside the group,
+because the same called workflows serve both. Prefer the wrapped shape unless a
+package has a large enough matrix that the flat list is genuinely hard to read.
+
 #### Branch Alias Checker
 
 The branch alias checker workflow automatically ensures that the Composer `branch-alias` in each repository's `composer.json` is up-to-date. It:
