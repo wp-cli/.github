@@ -53,23 +53,28 @@ A fanned-out caller should pass `grouped: true` to `reusable-unit.yml` and
 already states. Without it the legs read `Behat | PHP 8.5 | WP latest | SQLite`
 inside a group already called `Behat | PHP 8.5`.
 
-Group Behat by PHP version, which gives two to eight legs per group:
+The run view groups legs whose calling job name is identical, so that name must
+vary by the dimension being grouped on and collide across every other one. Group
+both suites by PHP version:
 
 ```
 Behat | PHP 8.5                    <- the calling job
   WP latest | mysql-8.0            <- the called workflow, with grouped: true
   WP trunk  | SQLite
+
+Unit | PHP 8.5
+  PHPUnit (with coverage)
+  PHPUnit (macOS)
+  PHPUnit (Windows)
 ```
 
-Do not group unit tests the same way. There is only ever one unit leg per PHP
-version, so `Unit | PHP ${{ matrix.php }}` produces a column of single-job
-groups. Use one `Unit` group and let the version distinguish the legs:
+A name that does not vary with the matrix does not collapse the legs into one
+group. GitHub appends the matrix combination to disambiguate it, so `name: Unit`
+produces one group per leg, labelled `Unit (8.5, latest, mysql-8.0)`.
 
-```
-Unit                               <- the calling job
-  PHP 7.2                          <- the called workflow, with grouped: true
-  PHP 8.5 (with coverage)
-```
+Some groups will hold a single leg — on a pull request there is one unit leg per
+PHP version, because the macOS and Windows entries only run on the nightly
+schedule. That is expected and still reads better than the alternative.
 
 Wrapped callers must leave `grouped` at its default of `false`, because there is
 no group header for them and the name has to stand on its own.

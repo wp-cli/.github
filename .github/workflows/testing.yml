@@ -36,10 +36,12 @@ jobs:
     # job declared in the workflow the run belongs to, which is why this fan-out
     # is here and not one level down.
     #
-    # Deliberately not "Unit | PHP ${{ matrix.php }}": there is only one unit leg
-    # per PHP version, so that would produce nine groups of one job each. A single
-    # group with the version on each leg reads better.
-    name: Unit
+    # The run view groups legs whose calling job name is identical, so this name
+    # must vary by the dimension being grouped on and collide across every other.
+    # A name that does not vary with the matrix at all does not produce one group;
+    # GitHub appends the matrix combination to disambiguate it, giving one group
+    # per leg labelled "Unit (8.5, latest, mysql-8.0)".
+    name: Unit | PHP ${{ matrix.php }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare.outputs.unit) }}
