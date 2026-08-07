@@ -94,7 +94,9 @@ jobs:
       # that was already there. Keep the install as a fallback in case a future
       # image drops it.
       - name: Install Ghostscript
-        if: ${{ inputs.os == 'ubuntu-22.04' || inputs.os == '' }}
+        # Keyed on the actual runner rather than the `os` input: an empty input no
+        # longer implies ubuntu-22.04 now that RUNNERS_NAME can select the image.
+        if: ${{ runner.os == 'Linux' }}
         run: |
           if command -v gs > /dev/null 2>&1; then
             echo "Ghostscript $(gs --version) is already installed; skipping."
@@ -128,9 +130,16 @@ jobs:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Change ImageMagick policy to allow pdf->png conversion.
-        if: ${{ inputs.os == 'ubuntu-22.04' || inputs.os == '' }}
+        # Keyed on the actual runner rather than the `os` input, and tolerant of
+        # images that ship a different ImageMagick layout — `sed -i` on a missing
+        # file exits non-zero and would fail the leg.
+        if: ${{ runner.os == 'Linux' }}
         run: |
-          sudo sed -i 's/^.*policy.*coder.*none.*PDF.*//' /etc/ImageMagick-6/policy.xml
+          if [ -f /etc/ImageMagick-6/policy.xml ]; then
+            sudo sed -i 's/^.*policy.*coder.*none.*PDF.*//' /etc/ImageMagick-6/policy.xml
+          else
+            echo 'No ImageMagick 6 policy file found; nothing to relax.'
+          fi
 
       # WP-CLI packages do not commit a lock file, so `composer update` resolves
       # dependencies on every run while the cache key stays pinned to composer.json.

@@ -29,10 +29,11 @@ permissions:
 
 # Cancels all previous workflow runs for the same branch that have not yet completed.
 concurrency:
-  # Pull requests group per branch so a new push supersedes the previous run.
-  # Everything else groups per event and commit, so a push to the default branch
-  # and the nightly schedule never cancel each other.
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  # Keying on the ref lets a new push supersede the run it replaces, for pull
+  # requests and branches alike. Keying on the event as well keeps a push to the
+  # default branch and the nightly schedule from cancelling each other, since
+  # both report the same ref.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -50,8 +51,9 @@ jobs:
           persist-credentials: false
           show-progress: ${{ runner.debug == '1' && 'true' || 'false' }}
           # Enough history to diff the change against its base. Other events do
-          # not inspect a diff and do not need it.
-          fetch-depth: ${{ ( github.event_name == 'pull_request' || github.event_name == 'push' ) && 0 || 1 }}
+          # not inspect a diff and do not need it. The operands are quoted because
+          # an unquoted 0 is falsy, which would make `&& 0 || 1` always yield 1.
+          fetch-depth: ${{ ( github.event_name == 'pull_request' || github.event_name == 'push' ) && '0' || '1' }}
 
       # A change that only touches documentation cannot affect the test result, so
       # there is no reason to spend 50 jobs on it. This is deliberately a deny list
