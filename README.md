@@ -44,10 +44,30 @@ surfaced, so all fifty legs appear as one flat list. Fanning out puts the matrix
 at the top level, so the run view collapses to one entry per PHP version.
 
 It costs about thirty lines in a file that is not synced, so every future change
-to the fan-out has to be repeated in each package that adopts it. The leg names
-are self-describing in both shapes and repeat the PHP version inside the group,
-because the same called workflows serve both. Prefer the wrapped shape unless a
-package has a large enough matrix that the flat list is genuinely hard to read.
+to the fan-out has to be repeated in each package that adopts it. Prefer the
+wrapped shape unless a package has a large enough matrix that the flat list is
+genuinely hard to read.
+
+A fanned-out caller should pass `grouped: true` to `reusable-unit.yml` and
+`reusable-functional.yml`. Their job names then leave out the suite and PHP
+version, because the group header already states both:
+
+```
+Behat | PHP 8.5                    <- the calling job
+  WP latest | mysql-8.0            <- the called workflow, with grouped: true
+  WP trunk  | SQLite
+```
+
+Without it the legs read `Behat | PHP 8.5 | WP latest | mysql-8.0` inside a group
+already called `Behat | PHP 8.5`. Wrapped callers must leave it at its default of
+`false`, because there is no group header for them and the name has to stand on
+its own.
+
+The one thing to watch is that with `grouped: true` a leg name is only unique
+within its group — `WP latest | SQLite` occurs under every PHP version. That is
+fine wherever the group header is part of the name, which is how the run view and
+the checks list both render it. If a leg ever shows up somewhere without its
+group, set `grouped: false` for that caller and the full name comes back.
 
 #### Branch Alias Checker
 

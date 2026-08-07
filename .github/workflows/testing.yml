@@ -45,6 +45,8 @@ jobs:
       php: ${{ matrix.php }}
       coverage: ${{ matrix.coverage == true }}
       os: ${{ matrix.os || '' }}
+      # The job name above already states the suite and PHP version.
+      grouped: true
 
   functional:
     needs: prepare
@@ -63,3 +65,5 @@ jobs:
       object_cache: ${{ matrix.object_cache }}
       coverage: ${{ matrix.coverage == true }}
       os: ${{ matrix.os || '' }}
+      # The job name above already states the suite and PHP version.
+      grouped: true

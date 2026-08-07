@@ -14,16 +14,21 @@ on:
         type: string
         required: false
         default: ''
+      grouped:
+        description: 'Set when the calling job name already states the suite and PHP version, so this workflow leaves them out instead of repeating them inside the group.'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   unit:
-    # This name has to stand on its own. The run view labels a nested job with its
-    # own name only; the calling job's name is not surfaced at this depth, so
-    # anything omitted here is not shown anywhere.
-    name: Unit | PHP ${{ inputs.php }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
+    # See the note on the equivalent name in reusable-functional.yml: `grouped`
+    # picks between a name that stands on its own and one that sits inside a group
+    # header which already states the suite and PHP version.
+    name: ${{ !inputs.grouped && format('Unit | PHP {0}', inputs.php) || 'PHPUnit' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
     # Repositories can point the default Linux legs at a larger runner by setting
     # the `RUNNERS_NAME` repository variable, without having to fork this workflow.
     # Explicit macOS/Windows legs are unaffected.

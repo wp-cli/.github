@@ -29,18 +29,29 @@ on:
         type: string
         required: false
         default: ''
+      grouped:
+        description: 'Set when the calling job name already states the suite and PHP version, so this workflow leaves them out instead of repeating them inside the group.'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   functional:
-    # This name has to stand on its own. The run view labels a nested job with its
-    # own name only; the calling job's name is not surfaced at this depth, so
-    # anything omitted here is not shown anywhere. The database version is spelled
-    # out because "MySQL" alone rendered the mysql-8.0 and mysql-8.4 legs
-    # identically.
-    name: Behat | PHP ${{ inputs.php }} | WP ${{ inputs.wp }} | ${{ inputs.dbtype == 'sqlite' && 'SQLite' || inputs.mysql || 'MySQL' }}${{ inputs.object_cache == 'sqlite' && ' (Obj Cache)' || '' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
+    # When the caller wraps this workflow, its own name is not surfaced in the run
+    # view, so this name has to carry everything. When the caller fans out, its job
+    # name becomes the group header and already states the suite and PHP version,
+    # so repeating them here reads as noise. `grouped` picks between the two.
+    #
+    # Written as `!grouped && <prefix> || ''` rather than `grouped && '' || <prefix>`
+    # on purpose: an empty string is falsy, so the latter would fall through to the
+    # prefix in both cases.
+    #
+    # The database version is spelled out because "MySQL" alone rendered the
+    # mysql-8.0 and mysql-8.4 legs identically.
+    name: ${{ !inputs.grouped && format('Behat | PHP {0} | ', inputs.php) || '' }}WP ${{ inputs.wp }} | ${{ inputs.dbtype == 'sqlite' && 'SQLite' || inputs.mysql || 'MySQL' }}${{ inputs.object_cache == 'sqlite' && ' (Obj Cache)' || '' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
     # Repositories with a heavy Behat suite can point the default Linux legs at a
     # larger runner by setting the `RUNNERS_NAME` repository variable, without
     # having to fork this workflow. Explicit macOS/Windows legs are unaffected.
