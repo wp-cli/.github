@@ -27,8 +27,13 @@ jobs:
   unit:
     # See the note on the equivalent name in reusable-functional.yml: `grouped`
     # picks between a name that stands on its own and one that sits inside a group
-    # header which already states the suite and PHP version.
-    name: ${{ !inputs.grouped && format('Unit | PHP {0}', inputs.php) || 'PHPUnit' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
+    # header which already states the suite.
+    #
+    # Unlike Behat, the grouped form keeps the PHP version. There is only ever one
+    # unit leg per PHP version, so grouping by version would produce a column of
+    # single-job groups; a fanned-out caller should use a single "Unit" group and
+    # let the version distinguish the legs inside it.
+    name: ${{ !inputs.grouped && format('Unit | PHP {0}', inputs.php) || format('PHP {0}', inputs.php) }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
     # Repositories can point the default Linux legs at a larger runner by setting
     # the `RUNNERS_NAME` repository variable, without having to fork this workflow.
     # Explicit macOS/Windows legs are unaffected.

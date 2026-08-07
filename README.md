@@ -49,8 +49,11 @@ wrapped shape unless a package has a large enough matrix that the flat list is
 genuinely hard to read.
 
 A fanned-out caller should pass `grouped: true` to `reusable-unit.yml` and
-`reusable-functional.yml`. Their job names then leave out the suite and PHP
-version, because the group header already states both:
+`reusable-functional.yml`, so their job names leave out what the group header
+already states. Without it the legs read `Behat | PHP 8.5 | WP latest | SQLite`
+inside a group already called `Behat | PHP 8.5`.
+
+Group Behat by PHP version, which gives two to eight legs per group:
 
 ```
 Behat | PHP 8.5                    <- the calling job
@@ -58,10 +61,18 @@ Behat | PHP 8.5                    <- the calling job
   WP trunk  | SQLite
 ```
 
-Without it the legs read `Behat | PHP 8.5 | WP latest | mysql-8.0` inside a group
-already called `Behat | PHP 8.5`. Wrapped callers must leave it at its default of
-`false`, because there is no group header for them and the name has to stand on
-its own.
+Do not group unit tests the same way. There is only ever one unit leg per PHP
+version, so `Unit | PHP ${{ matrix.php }}` produces a column of single-job
+groups. Use one `Unit` group and let the version distinguish the legs:
+
+```
+Unit                               <- the calling job
+  PHP 7.2                          <- the called workflow, with grouped: true
+  PHP 8.5 (with coverage)
+```
+
+Wrapped callers must leave `grouped` at its default of `false`, because there is
+no group header for them and the name has to stand on its own.
 
 The one thing to watch is that with `grouped: true` a leg name is only unique
 within its group — `WP latest | SQLite` occurs under every PHP version. That is

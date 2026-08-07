@@ -35,7 +35,11 @@ jobs:
     # A matrix only becomes a collapsible group in the run view when it sits on a
     # job declared in the workflow the run belongs to, which is why this fan-out
     # is here and not one level down.
-    name: Unit | PHP ${{ matrix.php }}
+    #
+    # Deliberately not "Unit | PHP ${{ matrix.php }}": there is only one unit leg
+    # per PHP version, so that would produce nine groups of one job each. A single
+    # group with the version on each leg reads better.
+    name: Unit
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare.outputs.unit) }}
