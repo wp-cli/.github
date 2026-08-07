@@ -10,7 +10,7 @@ on:
         required: false
         default: false
       os:
-        description: 'Runner to use. Defaults to ubuntu-22.04, or the RUNNERS_NAME repository variable when set.'
+        description: 'Runner to use. Defaults to ubuntu-24.04, or the RUNNERS_NAME repository variable when set.'
         type: string
         required: false
         default: ''
@@ -34,7 +34,7 @@ jobs:
     # Repositories can point the default Linux legs at a larger runner by setting
     # the `RUNNERS_NAME` repository variable, without having to fork this workflow.
     # Explicit macOS/Windows legs are unaffected.
-    runs-on: ${{ inputs.os || vars.RUNNERS_NAME || 'ubuntu-22.04' }}
+    runs-on: ${{ inputs.os || vars.RUNNERS_NAME || 'ubuntu-24.04' }}
     continue-on-error: ${{ inputs.php == 'nightly' }}
     timeout-minutes: ${{ inputs.coverage && 30 || 15 }}
 
