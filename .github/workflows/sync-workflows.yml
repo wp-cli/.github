@@ -41,22 +41,26 @@ jobs:
     # run cut short here is completed by the next push or the daily schedule.
     timeout-minutes: 60
     if: ${{ github.repository_owner == 'wp-cli' }}
+    # The sync authenticates with the ACTIONS_BOT token below, so GITHUB_TOKEN
+    # is never used to write anything and does not need `contents: write`.
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Sync files
         uses: adrianjost/files-sync-action@55d577a25b7106ebc3001353d981ecf8b0150df4 # v2.1.0
         with:
+          # Patterns are regexes matched against repo-relative paths, so the
+          # dots are escaped to stop them matching any character.
           FILE_PATTERNS: |
-            ^.actrc
-            ^.editorconfig
-            ^.github/workflows/copilot-setup-steps.yml
-            ^.github/workflows/regenerate-readme.yml
-            ^.github/workflows/welcome-new-contributors.yml
-            ^.github/workflows/issue-triage.yml
-            ^.github/workflows/check-branch-alias.yml
-            ^.github/workflows/manage-labels.yml
-            ^AGENTS.md
+            ^\.actrc
+            ^\.editorconfig
+            ^\.github/workflows/copilot-setup-steps\.yml
+            ^\.github/workflows/regenerate-readme\.yml
+            ^\.github/workflows/welcome-new-contributors\.yml
+            ^\.github/workflows/issue-triage\.yml
+            ^\.github/workflows/check-branch-alias\.yml
+            ^\.github/workflows/manage-labels\.yml
+            ^AGENTS\.md
           TARGET_REPOS: |
             wp-cli/ai-command
             wp-cli/ability-command
@@ -103,6 +107,9 @@ jobs:
             wp-cli/wp-config-transformer
             wp-cli/wp-super-cache-cli
           GITHUB_TOKEN: ${{ secrets.ACTIONS_BOT }}
+          # Only add and update; never delete a file in a target repo just
+          # because it is absent here.
+          SKIP_DELETE: true
 
   sync-dependabot:
     name: Sync Dependabot configuration
@@ -113,13 +120,13 @@ jobs:
     timeout-minutes: 60
     if: ${{ github.repository_owner == 'wp-cli' }}
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Sync files
         uses: adrianjost/files-sync-action@55d577a25b7106ebc3001353d981ecf8b0150df4 # v2.1.0
         with:
           FILE_PATTERNS: |
-            ^.github/dependabot.yml
+            ^\.github/dependabot\.yml
           TARGET_REPOS: |
             wp-cli/ai-command
             wp-cli/ability-command
@@ -168,3 +175,6 @@ jobs:
             wp-cli/wp-config-transformer
             wp-cli/wp-super-cache-cli
           GITHUB_TOKEN: ${{ secrets.ACTIONS_BOT }}
+          # Only add and update; never delete a file in a target repo just
+          # because it is absent here.
+          SKIP_DELETE: true
