@@ -6,17 +6,40 @@ on:
     branches:
       - main
       - master
+    paths:
+      - '.actrc'
+      - '.editorconfig'
+      - 'AGENTS.md'
+      - '.github/dependabot.yml'
+      - '.github/workflows/check-branch-alias.yml'
+      - '.github/workflows/copilot-setup-steps.yml'
+      - '.github/workflows/issue-triage.yml'
+      - '.github/workflows/manage-labels.yml'
+      - '.github/workflows/regenerate-readme.yml'
+      - '.github/workflows/welcome-new-contributors.yml'
+      - '.github/workflows/sync-workflows.yml'
   schedule:
-    - cron:  '*/10 * * * *' # Run every 10 minutes.
+    - cron:  '43 4 * * *' # Daily, to catch drift from out-of-band edits.
 
 permissions:
   contents: read
+
+# A sync pushes to every target repository, so only one may be in flight at a
+# time. Queued runs wait instead of cancelling, so a sync that has already
+# started always gets to finish.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
 
   sync-workflows:
     name: Sync GitHub Actions workflows
     runs-on: ubuntu-latest
+    # Generous, because the job pushes to ~45 repositories. It exists to bound a
+    # pathological run, not to pace a healthy one. The sync is idempotent, so a
+    # run cut short here is completed by the next push or the daily schedule.
+    timeout-minutes: 60
     if: ${{ github.repository_owner == 'wp-cli' }}
     permissions:
       contents: write
@@ -84,6 +107,10 @@ jobs:
   sync-dependabot:
     name: Sync Dependabot configuration
     runs-on: ubuntu-latest
+    # Generous, because the job pushes to ~45 repositories. It exists to bound a
+    # pathological run, not to pace a healthy one. The sync is idempotent, so a
+    # run cut short here is completed by the next push or the daily schedule.
+    timeout-minutes: 60
     if: ${{ github.repository_owner == 'wp-cli' }}
     permissions:
       contents: write
