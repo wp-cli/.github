@@ -35,11 +35,12 @@ permissions:
 
 jobs:
   functional:
-    # The calling job already states "Behat | PHP x" and groups on it, so this only
-    # needs to identify the leg within that group. The database version is spelled
+    # This name has to stand on its own. The run view labels a nested job with its
+    # own name only; the calling job's name is not surfaced at this depth, so
+    # anything omitted here is not shown anywhere. The database version is spelled
     # out because "MySQL" alone rendered the mysql-8.0 and mysql-8.4 legs
     # identically.
-    name: WP ${{ inputs.wp }} | ${{ inputs.dbtype == 'sqlite' && 'SQLite' || inputs.mysql || 'MySQL' }}${{ inputs.object_cache == 'sqlite' && ' (Obj Cache)' || '' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
+    name: Behat | PHP ${{ inputs.php }} | WP ${{ inputs.wp }} | ${{ inputs.dbtype == 'sqlite' && 'SQLite' || inputs.mysql || 'MySQL' }}${{ inputs.object_cache == 'sqlite' && ' (Obj Cache)' || '' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
     # Repositories with a heavy Behat suite can point the default Linux legs at a
     # larger runner by setting the `RUNNERS_NAME` repository variable, without
     # having to fork this workflow. Explicit macOS/Windows legs are unaffected.

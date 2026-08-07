@@ -20,9 +20,10 @@ permissions:
 
 jobs:
   unit:
-    # The calling job already states "Unit | PHP x" and groups on it, so this only
-    # needs to identify the leg within that group.
-    name: PHPUnit${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
+    # This name has to stand on its own. The run view labels a nested job with its
+    # own name only; the calling job's name is not surfaced at this depth, so
+    # anything omitted here is not shown anywhere.
+    name: Unit | PHP ${{ inputs.php }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
     # Repositories can point the default Linux legs at a larger runner by setting
     # the `RUNNERS_NAME` repository variable, without having to fork this workflow.
     # Explicit macOS/Windows legs are unaffected.
