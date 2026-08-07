@@ -46,7 +46,10 @@ jobs:
 
       - name: Install WP-CLI
         run: |
-          curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli-nightly.phar
+          # `-f` matters most here: without it curl writes the error body to the
+          # file and still exits 0, so an outage silently installs an HTML page
+          # as /usr/local/bin/wp and the failure surfaces much later.
+          curl -fsSL -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli-nightly.phar
           sudo mv wp-cli-nightly.phar /usr/local/bin/wp
           sudo chmod +x /usr/local/bin/wp
 

@@ -12,7 +12,6 @@ name: Issue and PR Triage
 permissions:
   issues: write
   pull-requests: write
-  actions: write
   contents: read
   models: read
 
@@ -161,6 +160,14 @@ jobs:
       github.event_name == 'workflow_dispatch' &&
       inputs.issue_number == ''
     runs-on: ubuntu-latest
+    # `actions: write` is only needed to dispatch triage runs, which happens
+    # here and nowhere else. Scoping it to this job keeps it out of the token
+    # handed to `triage-new-item`, which runs on `pull_request_target` and
+    # processes pull request content written by anyone who can open a PR.
+    permissions:
+      actions: write
+      issues: read
+      contents: read
     steps:
       - name: Find and dispatch triage for unlabeled items
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0

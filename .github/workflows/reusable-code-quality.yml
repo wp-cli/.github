@@ -122,7 +122,7 @@ jobs:
           show-progress: ${{ runner.debug == '1' && 'true' || 'false' }}
 
       - name: Setup node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 'lts/*'
 
@@ -132,7 +132,9 @@ jobs:
         run: curl --fail --silent --show-error https://raw.githubusercontent.com/wp-cli/.github/refs/heads/main/.gherkin-lintrc -o "$RUNNER_TEMP/.gherkin-lintrc"
 
       - name: Run linter
-        run: npx --yes gherkin-lint -c "$RUNNER_TEMP/.gherkin-lintrc"
+        # Pinned: unpinned `npx` resolves and executes the newest publish at run
+        # time, and gherkin-lint has not been released since 2023.
+        run: npx --yes gherkin-lint@4.2.4 -c "$RUNNER_TEMP/.gherkin-lintrc"
 
   lint-spellcheck:
     name: Spell check
