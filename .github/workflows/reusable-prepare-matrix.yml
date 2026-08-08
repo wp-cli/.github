@@ -25,7 +25,7 @@ on:
         required: false
         default: '4.9'
       with-coverage:
-        description: 'Include coverages tests.'
+        description: 'Include coverage tests.'
         type: boolean
         required: false
         default: true
