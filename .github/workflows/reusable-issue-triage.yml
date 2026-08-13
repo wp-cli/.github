@@ -84,6 +84,12 @@ jobs:
           ITEM_BODY: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.body || github.event.issue.body }}
           ITEM_TYPE: ${{ github.event_name == 'pull_request_target' && 'pull request' || 'issue' }}
         with:
+          # `actions/ai-inference` defaults this to `gpt-4.1`, which Copilot no
+          # longer offers - the CLI rejects it outright and the step fails on
+          # every run. `auto` lets Copilot pick, so a model being retired
+          # cannot break triage again. Pin a specific model here only if a
+          # future prompt needs one, and expect to maintain it when it ages out.
+          model: auto
           prompt: |
             ## Role
 
@@ -220,6 +226,12 @@ jobs:
     permissions:
       actions: write
       issues: read
+      # `listForRepo` below returns issues *and* pull requests, but the pull
+      # requests are filtered out of the response unless the token can read
+      # them - silently, as an empty list rather than an error. Without this
+      # the job reports "Found 0 open issues and PRs" in a repository whose
+      # open items are all pull requests, and triages nothing.
+      pull-requests: read
       contents: read
     steps:
       - name: Find and dispatch triage for unlabeled items
@@ -362,6 +374,12 @@ jobs:
           ITEM_BODY: ${{ fromJSON(steps.get-item.outputs.result).body }}
           ITEM_TYPE: ${{ fromJSON(steps.get-item.outputs.result).type }}
         with:
+          # `actions/ai-inference` defaults this to `gpt-4.1`, which Copilot no
+          # longer offers - the CLI rejects it outright and the step fails on
+          # every run. `auto` lets Copilot pick, so a model being retired
+          # cannot break triage again. Pin a specific model here only if a
+          # future prompt needs one, and expect to maintain it when it ages out.
+          model: auto
           prompt: |
             ## Role
 
