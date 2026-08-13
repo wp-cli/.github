@@ -13,7 +13,11 @@ permissions:
   issues: write
   pull-requests: write
   contents: read
-  models: read
+  # `actions/ai-inference` v3 dropped the GitHub Models provider, so `models:
+  # read` no longer buys anything. The Copilot CLI it now shells out to
+  # authenticates as the workflow itself, and this is the scope that lets it
+  # spend a Copilot request. See the notes on the inference steps below.
+  copilot-requests: write
 
 jobs:
   triage-new-item:
@@ -34,10 +38,34 @@ jobs:
             const labelNames = labels.data.map(label => label.name);
             return labelNames.join(', ');
 
+      # The Copilot CLI is not preinstalled on GitHub-hosted runners, and
+      # `actions/ai-inference` v3 only shells out to it - it never installs it.
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: lts/*
+
+      # Deliberately unpinned, unlike everything else here: authenticating with
+      # `GITHUB_TOKEN` instead of a PAT only works on recent CLI releases, so a
+      # pin would be a slow trap rather than a safeguard.
+      - name: Install Copilot CLI
+        run: npm install -g @github/copilot
+
       - name: Analyze with AI
         id: ai-triage
-        uses: actions/ai-inference@a7805884c80886efc241e94a5351df715968a0ad # v2
+        uses: actions/ai-inference@2c43c91ae16266ca159d311430343c67a5ffa222 # v3
         env:
+          # No PAT secret needed: the CLI authenticates as the workflow, and
+          # `copilot-requests: write` meters the request to the organization.
+          #
+          # This job runs on `pull_request_target`, so the prompt below carries
+          # pull request text written by anyone who can open one. The action
+          # passes no `--allow-tool` flags, so Copilot is denied shell,
+          # filesystem and network access and cannot reach this token - it
+          # reads the prompt and returns text, exactly as v2 did. Keep it that
+          # way: setting `copilot-allow-tools` here would hand a fork's prompt
+          # a runner with a write-scoped token on it.
+          GITHUB_TOKEN: ${{ github.token }}
           AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
           ITEM_TITLE: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.title || github.event.issue.title }}
           ITEM_BODY: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.body || github.event.issue.body }}
@@ -47,9 +75,9 @@ jobs:
             ## Role
 
             You are an issue and pull request triage assistant. Analyze the current GitHub
-            ${{ env.ITEM_TYPE }} and identify the most appropriate existing labels. Use the
-            available tools to gather information; do not ask for information
-            to be provided.
+            ${{ env.ITEM_TYPE }} and identify the most appropriate existing labels. Work
+            only from the input data below; you have no tools available and no
+            further information can be provided.
 
             ## Guidelines
 
@@ -271,10 +299,26 @@ jobs:
               type: itemType
             };
 
+      # The Copilot CLI is not preinstalled on GitHub-hosted runners, and
+      # `actions/ai-inference` v3 only shells out to it - it never installs it.
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: lts/*
+
+      # Deliberately unpinned, unlike everything else here: authenticating with
+      # `GITHUB_TOKEN` instead of a PAT only works on recent CLI releases, so a
+      # pin would be a slow trap rather than a safeguard.
+      - name: Install Copilot CLI
+        run: npm install -g @github/copilot
+
       - name: Analyze with AI
         id: ai-triage
-        uses: actions/ai-inference@a7805884c80886efc241e94a5351df715968a0ad # v2
+        uses: actions/ai-inference@2c43c91ae16266ca159d311430343c67a5ffa222 # v3
         env:
+          # No PAT secret needed: the CLI authenticates as the workflow, and
+          # `copilot-requests: write` meters the request to the organization.
+          GITHUB_TOKEN: ${{ github.token }}
           AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
           ITEM_TITLE: ${{ fromJSON(steps.get-item.outputs.result).title }}
           ITEM_BODY: ${{ fromJSON(steps.get-item.outputs.result).body }}
@@ -284,9 +328,9 @@ jobs:
             ## Role
 
             You are an issue and pull request triage assistant. Analyze the current GitHub
-            ${{ env.ITEM_TYPE }} and identify the most appropriate existing labels. Use the
-            available tools to gather information; do not ask for information
-            to be provided.
+            ${{ env.ITEM_TYPE }} and identify the most appropriate existing labels. Work
+            only from the input data below; you have no tools available and no
+            further information can be provided.
 
             ## Guidelines
 
