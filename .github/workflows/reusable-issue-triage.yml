@@ -220,6 +220,12 @@ jobs:
     permissions:
       actions: write
       issues: read
+      # `listForRepo` below returns issues *and* pull requests, but the pull
+      # requests are filtered out of the response unless the token can read
+      # them - silently, as an empty list rather than an error. Without this
+      # the job reports "Found 0 open issues and PRs" in a repository whose
+      # open items are all pull requests, and triages nothing.
+      pull-requests: read
       contents: read
     steps:
       - name: Find and dispatch triage for unlabeled items
