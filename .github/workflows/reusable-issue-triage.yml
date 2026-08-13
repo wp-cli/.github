@@ -329,13 +329,22 @@ jobs:
       - name: Get item details
         id: get-item
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          # This job only ever runs on `workflow_dispatch`, and that payload
+          # carries no issue, no pull request and no number - so
+          # `context.issue.number` resolves to `undefined` here and the lookup
+          # below 404s. The number arrives as a workflow input instead, which
+          # is what the apply job downstream already reads.
+          ITEM_NUMBER: ${{ inputs.issue_number }}
         with:
           script: |
+            const itemNumber = parseInt(process.env.ITEM_NUMBER);
+
             // Try to get as an issue first (works for both issues and PRs)
             const issue = await github.rest.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: itemNumber,
             });
 
             const itemType = issue.data.pull_request ? 'pull request' : 'issue';
