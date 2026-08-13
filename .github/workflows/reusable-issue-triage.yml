@@ -9,21 +9,30 @@ name: Issue and PR Triage
         required: false
         type: string
 
+# Every job narrows this further, and no job holds both `copilot-requests:
+# write` and a write scope. `actions/ai-inference` v3 dropped the GitHub Models
+# provider and now runs the Copilot CLI, installed from npm at run time, with a
+# token in its environment - so inference and label writes are split into
+# separate jobs and the token that can write never reaches the CLI.
 permissions:
-  issues: write
-  pull-requests: write
   contents: read
-  # `actions/ai-inference` v3 dropped the GitHub Models provider, so `models:
-  # read` no longer buys anything. The Copilot CLI it now shells out to
-  # authenticates as the workflow itself, and this is the scope that lets it
-  # spend a Copilot request. See the notes on the inference steps below.
-  copilot-requests: write
 
 jobs:
   triage-new-item:
     name: Triage New Issue or PR
     if: github.event_name == 'issues' || github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
+    # Read-only, plus the scope that pays for the inference. This is the job
+    # that runs the Copilot CLI, so it is the job that must not be able to
+    # write anything.
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+      copilot-requests: write
+    outputs:
+      response: ${{ steps.ai-triage.outputs.response }}
+      labels: ${{ steps.get-labels.outputs.result }}
     steps:
       - name: Get available labels
         id: get-labels
@@ -47,7 +56,10 @@ jobs:
 
       # Deliberately unpinned, unlike everything else here: authenticating with
       # `GITHUB_TOKEN` instead of a PAT only works on recent CLI releases, so a
-      # pin would be a slow trap rather than a safeguard.
+      # pin would be a slow trap rather than a safeguard. The exposure that
+      # would otherwise argue for pinning is handled by this job's permissions
+      # instead - the CLI runs with a read-only token and cannot write even if
+      # a release is compromised.
       - name: Install Copilot CLI
         run: npm install -g @github/copilot
 
@@ -59,12 +71,13 @@ jobs:
           # `copilot-requests: write` meters the request to the organization.
           #
           # This job runs on `pull_request_target`, so the prompt below carries
-          # pull request text written by anyone who can open one. The action
-          # passes no `--allow-tool` flags, so Copilot is denied shell,
-          # filesystem and network access and cannot reach this token - it
-          # reads the prompt and returns text, exactly as v2 did. Keep it that
-          # way: setting `copilot-allow-tools` here would hand a fork's prompt
-          # a runner with a write-scoped token on it.
+          # pull request text written by anyone who can open one. Two separate
+          # things contain that. The action passes no `--allow-tool` flags, so
+          # Copilot gets no shell, filesystem or network access - that stops a
+          # prompt injection. And this job's token is read-only, so even a
+          # malicious CLI release, which no prompt restriction would stop,
+          # cannot write anything with it. Adding `copilot-allow-tools` here
+          # would give up the first of those.
           GITHUB_TOKEN: ${{ github.token }}
           AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
           ITEM_TITLE: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.title || github.event.issue.title }}
@@ -119,12 +132,24 @@ jobs:
                label1, label2, label3
                ```
 
+  apply-new-item-labels:
+    name: Apply Labels to New Issue or PR
+    needs: triage-new-item
+    if: needs.triage-new-item.outputs.response != ''
+    runs-on: ubuntu-latest
+    # Holds the write scopes `triage-new-item` gave up. Nothing here installs or
+    # runs the Copilot CLI, so this token is only ever exposed to the allowlist
+    # check below, which is what keeps a model response from becoming a write.
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
       - name: Apply labels
-        if: steps.ai-triage.outputs.response != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
-          AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
+          AI_RESPONSE: ${{ needs.triage-new-item.outputs.response }}
+          AVAILABLE_LABELS: ${{ needs.triage-new-item.outputs.labels }}
         with:
           script: |
             const response = process.env.AI_RESPONSE;
@@ -265,6 +290,16 @@ jobs:
       github.event_name == 'workflow_dispatch' &&
       inputs.issue_number != ''
     runs-on: ubuntu-latest
+    # Same split as `triage-new-item`: this job runs the Copilot CLI, so it
+    # holds no write scope. `apply-single-item-labels` does the writing.
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+      copilot-requests: write
+    outputs:
+      response: ${{ steps.ai-triage.outputs.response }}
+      labels: ${{ steps.get-labels.outputs.result }}
     steps:
       - name: Get available labels
         id: get-labels
@@ -308,7 +343,10 @@ jobs:
 
       # Deliberately unpinned, unlike everything else here: authenticating with
       # `GITHUB_TOKEN` instead of a PAT only works on recent CLI releases, so a
-      # pin would be a slow trap rather than a safeguard.
+      # pin would be a slow trap rather than a safeguard. The exposure that
+      # would otherwise argue for pinning is handled by this job's permissions
+      # instead - the CLI runs with a read-only token and cannot write even if
+      # a release is compromised.
       - name: Install Copilot CLI
         run: npm install -g @github/copilot
 
@@ -372,13 +410,23 @@ jobs:
                label1, label2, label3
                ```
 
+  apply-single-item-labels:
+    name: Apply Labels to Single Issue or PR
+    needs: triage-single-item
+    if: needs.triage-single-item.outputs.response != ''
+    runs-on: ubuntu-latest
+    # Holds the write scopes `triage-single-item` gave up, and runs no CLI.
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
       - name: Apply labels
-        if: steps.ai-triage.outputs.response != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
+          AI_RESPONSE: ${{ needs.triage-single-item.outputs.response }}
           ITEM_NUMBER: ${{ inputs.issue_number }}
-          AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
+          AVAILABLE_LABELS: ${{ needs.triage-single-item.outputs.labels }}
         with:
           script: |
             const response = process.env.AI_RESPONSE;
