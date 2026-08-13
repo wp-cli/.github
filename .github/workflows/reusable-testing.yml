@@ -37,16 +37,478 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # The matrix computation lives in its own reusable workflow so a caller can
-  # invoke it directly and fan out from its own top-level jobs, which is what
-  # makes the legs group by PHP version in the run view. See the README.
   prepare:
-    uses: ./.github/workflows/reusable-prepare-matrix.yml
-    with:
-      minimum-php: ${{ inputs.minimum-php }}
-      minimum-wp: ${{ inputs.minimum-wp }}
-      with-coverage: ${{ inputs.with-coverage }}
-      matrix: ${{ inputs.matrix }}
+    name: Prepare test matrices
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    outputs:
+      unit: ${{ steps.unit.outputs.matrix }}
+      functional: ${{ steps.functional.outputs.matrix }}
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          show-progress: ${{ runner.debug == '1' && 'true' || 'false' }}
+          # Enough history to diff the change against its base. Other events do
+          # not inspect a diff and do not need it. The operands are quoted because
+          # an unquoted 0 is falsy, which would make `&& 0 || 1` always yield 1.
+          fetch-depth: ${{ ( github.event_name == 'pull_request' || github.event_name == 'push' ) && '0' || '1' }}
+
+      # A change that only touches documentation cannot affect the test result, so
+      # there is no reason to spend 50 jobs on it. This is deliberately a deny list
+      # rather than an allow list: the reusable workflow cannot know how any given
+      # package lays out its source, so anything not provably irrelevant still runs
+      # the full suite. Every failure path below also falls back to testing.
+      - name: Determine whether the change is documentation only
+        id: docs-only
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          # Scheduled and manually dispatched runs always test everything.
+          if [ "$EVENT_NAME" != 'pull_request' ] && [ "$EVENT_NAME" != 'push' ]; then
+            echo 'Not a pull request or push; testing everything.'
+            echo "value=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # A newly created branch reports an all-zero base.
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = '0000000000000000000000000000000000000000' ]; then
+            echo 'No usable base commit; testing everything.'
+            echo "value=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! CHANGED=$(git diff --name-only "${BASE_SHA}...${HEAD_SHA}" 2>/dev/null); then
+            echo "Could not diff ${BASE_SHA}...${HEAD_SHA}; testing everything."
+            echo "value=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo 'Changed files:'
+          printf '%s\n' "$CHANGED"
+
+          RELEVANT=$(printf '%s\n' "$CHANGED" | grep -Ev \
+            -e '\.md$' \
+            -e '^\.github/ISSUE_TEMPLATE/' \
+            -e '^\.github/(CODEOWNERS|FUNDING\.yml)$' \
+            -e '^(LICENSE|\.editorconfig|\.gitattributes|\.gitignore)$' \
+            || true)
+
+          if [ -z "$RELEVANT" ]; then
+            echo 'Only documentation and repository metadata changed; skipping the test matrix.'
+            echo "value=true" >> "$GITHUB_OUTPUT"
+          else
+            echo 'Test-relevant files changed:'
+            printf '%s\n' "$RELEVANT"
+            echo "value=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Entries flagged with "nightly": true are the ones the test jobs run with
+      # `continue-on-error`. They can never gate a merge, so running them on every
+      # pull request spends runner time without producing a signal. They run on the
+      # nightly schedule and on manual dispatch instead.
+      - name: Build the base matrix
+        id: base
+        env:
+          ADDITIONAL_MATRIX: ${{ inputs.matrix }}
+          INCLUDE_NIGHTLY: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        run: |
+          MATRIX=$(cat << 'EOF'
+          {
+            "include": [
+              {
+                "php": "7.2",
+                "wp": "4.9",
+                "mysql": "mysql-5.6"
+              },
+              {
+                "php": "7.2",
+                "wp": "6.9",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "7.2",
+                "wp": "6.9",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "7.3",
+                "wp": "6.9",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "7.3",
+                "wp": "6.9",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "7.4",
+                "wp": "latest",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "7.4",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.0",
+                "wp": "latest",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.0",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.1",
+                "wp": "latest",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.1",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.2",
+                "wp": "latest",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.2",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.3",
+                "wp": "latest",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.3",
+                "wp": "latest",
+                "mysql": "mysql-8.4"
+              },
+              {
+                "php": "8.3",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.3",
+                "wp": "latest",
+                "mysql": "mariadb-11.4",
+                "dbtype": "mariadb",
+                "nightly": true
+              },
+              {
+                "php": "8.4",
+                "wp": "latest",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.4",
+                "wp": "latest",
+                "mysql": "mysql-8.4"
+              },
+              {
+                "php": "8.4",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.4",
+                "wp": "latest",
+                "mysql": "mariadb-11.4",
+                "dbtype": "mariadb",
+                "nightly": true
+              },
+              {
+                "php": "8.5",
+                "wp": "latest",
+                "mysql": "mysql-8.0",
+                "coverage": true
+              },
+              {
+                "php": "8.5",
+                "wp": "latest",
+                "mysql": "mysql-8.4"
+              },
+              {
+                "php": "8.5",
+                "wp": "latest",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.5",
+                "wp": "latest",
+                "mysql": "mariadb-11.4",
+                "dbtype": "mariadb",
+                "nightly": true
+              },
+              {
+                "php": "7.4",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "7.4",
+                "wp": "trunk",
+                "mysql": "mysql-5.7"
+              },
+              {
+                "php": "7.4",
+                "wp": "trunk",
+                "mysql": "mysql-5.6"
+              },
+              {
+                "php": "8.0",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.0",
+                "wp": "trunk",
+                "mysql": "mysql-5.7"
+              },
+              {
+                "php": "8.0",
+                "wp": "trunk",
+                "mysql": "mysql-5.6"
+              },
+              {
+                "php": "8.1",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.2",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.3",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.3",
+                "wp": "trunk",
+                "mysql": "mysql-8.4"
+              },
+              {
+                "php": "8.3",
+                "wp": "trunk",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.3",
+                "wp": "trunk",
+                "mysql": "mariadb-11.4",
+                "dbtype": "mariadb",
+                "nightly": true
+              },
+              {
+                "php": "8.4",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.4",
+                "wp": "trunk",
+                "mysql": "mysql-8.4"
+              },
+              {
+                "php": "8.4",
+                "wp": "trunk",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.4",
+                "wp": "trunk",
+                "mysql": "mariadb-11.4",
+                "dbtype": "mariadb",
+                "nightly": true
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "mysql": "mysql-8.0"
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "mysql": "mysql-8.4"
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "dbtype": "sqlite"
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "mysql": "mariadb-11.4",
+                "dbtype": "mariadb",
+                "nightly": true
+              },
+              {
+                "php": "nightly",
+                "wp": "trunk",
+                "mysql": "mysql-8.4",
+                "nightly": true
+              },
+              {
+                "php": "nightly",
+                "wp": "trunk",
+                "dbtype": "sqlite",
+                "nightly": true
+              },
+              {
+                "php": "8.5",
+                "wp": "latest",
+                "dbtype": "sqlite",
+                "object_cache": "sqlite"
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "dbtype": "sqlite",
+                "object_cache": "sqlite"
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "dbtype": "sqlite",
+                "os": "macos-latest",
+                "nightly": true
+              },
+              {
+                "php": "8.5",
+                "wp": "trunk",
+                "dbtype": "sqlite",
+                "os": "windows-2022",
+                "nightly": true
+              }
+            ]
+          }
+          EOF
+          )
+          MERGED_MATRIX=$(printf '%s\n%s\n' "$MATRIX" "$ADDITIONAL_MATRIX" | jq -sc \
+            --argjson include_nightly "$INCLUDE_NIGHTLY" '
+            . as $root |
+            (($root[0].exclude // []) + ($root[1].exclude // [])) as $excludes |
+            {
+              include: (
+                (.[0].include + .[1].include | map(if .os == null then .os = "" else . end)) |
+                map(. as $item | select($excludes | any(. as $rule | all($rule|keys[]; $item[.] == $rule[.])) | not)) |
+                unique |
+
+                # Drop the soft-failing entries unless this is a nightly or manual run.
+                # Entries supplied through the `matrix` input have no `nightly` key and
+                # are therefore always kept.
+                map(select($include_nightly or (.nightly // false) == false))
+              )
+            }
+          ')
+          echo "matrix=${MERGED_MATRIX}" >> "$GITHUB_OUTPUT"
+
+      - name: Check existence of composer.json & phpunit.xml.dist files
+        id: check_unit_files
+        run: echo "files_exists=$([ -f composer.json ] && [ -f phpunit.xml.dist ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Check existence of composer.json & behat.yml files
+        id: check_functional_files
+        run: echo "files_exists=$([ -f composer.json ] && [ -f behat.yml ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Set unit test matrix
+        id: unit
+        env:
+          BASE_MATRIX: ${{ steps.base.outputs.matrix }}
+          FILE_EXISTS: ${{ steps.check_unit_files.outputs.files_exists }}
+          DOCS_ONLY: ${{ steps.docs-only.outputs.value }}
+          INPUTS_MINIMUM_PHP: ${{ inputs.minimum-php }}
+          INPUTS_MINIMUM_WP: ${{ inputs.minimum-wp }}
+          WITH_COVERAGE: ${{ inputs.with-coverage }}
+        run: |
+          if [[ $FILE_EXISTS == 'true' && $DOCS_ONLY != 'true' ]]; then
+            echo "matrix=$(jq -c \
+              --argjson with_coverage_flag "${WITH_COVERAGE}" \
+              --arg minimum_php "${INPUTS_MINIMUM_PHP}" \
+              --arg minimum_wp "${INPUTS_MINIMUM_WP}" \
+              '
+              .include |= (
+                map(
+                  # First, select only the versions that meet all minimum requirements
+                  select(
+                    (.php >= $minimum_php) and
+                    (.wp == "latest" or .wp >= $minimum_wp)
+                  ) |
+
+                  # Next, update the coverage flag on the remaining items
+                  if $with_coverage_flag == false and .coverage == true then
+                    .coverage = false
+                  else
+                    .
+                  end
+                ) |
+
+                # Finally, get the unique entries
+                unique_by([.php, .os])
+              )
+              ' <<< "$BASE_MATRIX")" >> "$GITHUB_OUTPUT"
+          else
+            echo "matrix=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set functional test matrix
+        id: functional
+        env:
+          BASE_MATRIX: ${{ steps.base.outputs.matrix }}
+          FILE_EXISTS: ${{ steps.check_functional_files.outputs.files_exists }}
+          DOCS_ONLY: ${{ steps.docs-only.outputs.value }}
+          INPUTS_MINIMUM_PHP: ${{ inputs.minimum-php }}
+          INPUTS_MINIMUM_WP: ${{ inputs.minimum-wp }}
+          WITH_COVERAGE: ${{ inputs.with-coverage }}
+        run: |
+          if [[ $FILE_EXISTS == 'true' && $DOCS_ONLY != 'true' ]]; then
+            echo "matrix=$(jq -c \
+              --argjson with_coverage_flag "${WITH_COVERAGE}" \
+              --arg minimum_php "${INPUTS_MINIMUM_PHP}" \
+              --arg minimum_wp "${INPUTS_MINIMUM_WP}" \
+              '
+              # First, select only the versions that meet all minimum requirements
+              .include |= (
+                map(
+                  select(
+                    .php >= $minimum_php
+                  ) |
+                  # Next, update the coverage flag on the remaining items
+                  if $with_coverage_flag == false and .coverage == true then
+                    .coverage = false
+                  else
+                  .
+                  end
+                )
+              ) |
+
+              # Reassign WP4.9 to minimum_wp
+              .include |= (
+                map(
+                  select(
+                    .wp == "4.9"
+                  ).wp |= $minimum_wp
+                )
+              )
+              ' <<< "$BASE_MATRIX" )" >> "$GITHUB_OUTPUT"
+          else
+            echo "matrix=" >> "$GITHUB_OUTPUT"
+          fi
 
   unit:
     needs: prepare
