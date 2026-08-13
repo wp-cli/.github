@@ -10,6 +10,7 @@ on:
       - '.actrc'
       - '.editorconfig'
       - 'AGENTS.md'
+      - '.github/actionlint.yml'
       - '.github/dependabot.yml'
       - '.github/workflows/check-branch-alias.yml'
       - '.github/workflows/copilot-setup-steps.yml'
@@ -54,6 +55,7 @@ jobs:
           FILE_PATTERNS: |
             ^\.actrc
             ^\.editorconfig
+            ^\.github/actionlint\.yml
             ^\.github/workflows/copilot-setup-steps\.yml
             ^\.github/workflows/regenerate-readme\.yml
             ^\.github/workflows/welcome-new-contributors\.yml

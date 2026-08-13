@@ -9,17 +9,30 @@ name: Issue and PR Triage
         required: false
         type: string
 
+# Every job narrows this further, and no job holds both `copilot-requests:
+# write` and a write scope. `actions/ai-inference` v3 dropped the GitHub Models
+# provider and now runs the Copilot CLI, installed from npm at run time, with a
+# token in its environment - so inference and label writes are split into
+# separate jobs and the token that can write never reaches the CLI.
 permissions:
-  issues: write
-  pull-requests: write
   contents: read
-  models: read
 
 jobs:
   triage-new-item:
     name: Triage New Issue or PR
     if: github.event_name == 'issues' || github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
+    # Read-only, plus the scope that pays for the inference. This is the job
+    # that runs the Copilot CLI, so it is the job that must not be able to
+    # write anything.
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+      copilot-requests: write
+    outputs:
+      response: ${{ steps.ai-triage.outputs.response }}
+      labels: ${{ steps.get-labels.outputs.result }}
     steps:
       - name: Get available labels
         id: get-labels
@@ -34,10 +47,38 @@ jobs:
             const labelNames = labels.data.map(label => label.name);
             return labelNames.join(', ');
 
+      # The Copilot CLI is not preinstalled on GitHub-hosted runners, and
+      # `actions/ai-inference` v3 only shells out to it - it never installs it.
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: lts/*
+
+      # Deliberately unpinned, unlike everything else here: authenticating with
+      # `GITHUB_TOKEN` instead of a PAT only works on recent CLI releases, so a
+      # pin would be a slow trap rather than a safeguard. The exposure that
+      # would otherwise argue for pinning is handled by this job's permissions
+      # instead - the CLI runs with a read-only token and cannot write even if
+      # a release is compromised.
+      - name: Install Copilot CLI
+        run: npm install -g @github/copilot
+
       - name: Analyze with AI
         id: ai-triage
-        uses: actions/ai-inference@a7805884c80886efc241e94a5351df715968a0ad # v2
+        uses: actions/ai-inference@2c43c91ae16266ca159d311430343c67a5ffa222 # v3
         env:
+          # No PAT secret needed: the CLI authenticates as the workflow, and
+          # `copilot-requests: write` meters the request to the organization.
+          #
+          # This job runs on `pull_request_target`, so the prompt below carries
+          # pull request text written by anyone who can open one. Two separate
+          # things contain that. The action passes no `--allow-tool` flags, so
+          # Copilot gets no shell, filesystem or network access - that stops a
+          # prompt injection. And this job's token is read-only, so even a
+          # malicious CLI release, which no prompt restriction would stop,
+          # cannot write anything with it. Adding `copilot-allow-tools` here
+          # would give up the first of those.
+          GITHUB_TOKEN: ${{ github.token }}
           AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
           ITEM_TITLE: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.title || github.event.issue.title }}
           ITEM_BODY: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.body || github.event.issue.body }}
@@ -47,9 +88,9 @@ jobs:
             ## Role
 
             You are an issue and pull request triage assistant. Analyze the current GitHub
-            ${{ env.ITEM_TYPE }} and identify the most appropriate existing labels. Use the
-            available tools to gather information; do not ask for information
-            to be provided.
+            ${{ env.ITEM_TYPE }} and identify the most appropriate existing labels. Work
+            only from the input data below; you have no tools available and no
+            further information can be provided.
 
             ## Guidelines
 
@@ -91,12 +132,24 @@ jobs:
                label1, label2, label3
                ```
 
+  apply-new-item-labels:
+    name: Apply Labels to New Issue or PR
+    needs: triage-new-item
+    if: needs.triage-new-item.outputs.response != ''
+    runs-on: ubuntu-latest
+    # Holds the write scopes `triage-new-item` gave up. Nothing here installs or
+    # runs the Copilot CLI, so this token is only ever exposed to the allowlist
+    # check below, which is what keeps a model response from becoming a write.
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
       - name: Apply labels
-        if: steps.ai-triage.outputs.response != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
-          AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
+          AI_RESPONSE: ${{ needs.triage-new-item.outputs.response }}
+          AVAILABLE_LABELS: ${{ needs.triage-new-item.outputs.labels }}
         with:
           script: |
             const response = process.env.AI_RESPONSE;
@@ -237,6 +290,16 @@ jobs:
       github.event_name == 'workflow_dispatch' &&
       inputs.issue_number != ''
     runs-on: ubuntu-latest
+    # Same split as `triage-new-item`: this job runs the Copilot CLI, so it
+    # holds no write scope. `apply-single-item-labels` does the writing.
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+      copilot-requests: write
+    outputs:
+      response: ${{ steps.ai-triage.outputs.response }}
+      labels: ${{ steps.get-labels.outputs.result }}
     steps:
       - name: Get available labels
         id: get-labels
@@ -271,10 +334,29 @@ jobs:
               type: itemType
             };
 
+      # The Copilot CLI is not preinstalled on GitHub-hosted runners, and
+      # `actions/ai-inference` v3 only shells out to it - it never installs it.
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: lts/*
+
+      # Deliberately unpinned, unlike everything else here: authenticating with
+      # `GITHUB_TOKEN` instead of a PAT only works on recent CLI releases, so a
+      # pin would be a slow trap rather than a safeguard. The exposure that
+      # would otherwise argue for pinning is handled by this job's permissions
+      # instead - the CLI runs with a read-only token and cannot write even if
+      # a release is compromised.
+      - name: Install Copilot CLI
+        run: npm install -g @github/copilot
+
       - name: Analyze with AI
         id: ai-triage
-        uses: actions/ai-inference@a7805884c80886efc241e94a5351df715968a0ad # v2
+        uses: actions/ai-inference@2c43c91ae16266ca159d311430343c67a5ffa222 # v3
         env:
+          # No PAT secret needed: the CLI authenticates as the workflow, and
+          # `copilot-requests: write` meters the request to the organization.
+          GITHUB_TOKEN: ${{ github.token }}
           AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
           ITEM_TITLE: ${{ fromJSON(steps.get-item.outputs.result).title }}
           ITEM_BODY: ${{ fromJSON(steps.get-item.outputs.result).body }}
@@ -284,9 +366,9 @@ jobs:
             ## Role
 
             You are an issue and pull request triage assistant. Analyze the current GitHub
-            ${{ env.ITEM_TYPE }} and identify the most appropriate existing labels. Use the
-            available tools to gather information; do not ask for information
-            to be provided.
+            ${{ env.ITEM_TYPE }} and identify the most appropriate existing labels. Work
+            only from the input data below; you have no tools available and no
+            further information can be provided.
 
             ## Guidelines
 
@@ -328,13 +410,23 @@ jobs:
                label1, label2, label3
                ```
 
+  apply-single-item-labels:
+    name: Apply Labels to Single Issue or PR
+    needs: triage-single-item
+    if: needs.triage-single-item.outputs.response != ''
+    runs-on: ubuntu-latest
+    # Holds the write scopes `triage-single-item` gave up, and runs no CLI.
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
       - name: Apply labels
-        if: steps.ai-triage.outputs.response != ''
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          AI_RESPONSE: ${{ steps.ai-triage.outputs.response }}
+          AI_RESPONSE: ${{ needs.triage-single-item.outputs.response }}
           ITEM_NUMBER: ${{ inputs.issue_number }}
-          AVAILABLE_LABELS: ${{ steps.get-labels.outputs.result }}
+          AVAILABLE_LABELS: ${{ needs.triage-single-item.outputs.labels }}
         with:
           script: |
             const response = process.env.AI_RESPONSE;
