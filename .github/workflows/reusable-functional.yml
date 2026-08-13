@@ -25,37 +25,26 @@ on:
         required: false
         default: false
       os:
-        description: 'Runner to use. Defaults to ubuntu-24.04, or the RUNNERS_NAME repository variable when set.'
+        description: 'Runner to use. Defaults to ubuntu-22.04, or the RUNNERS_NAME repository variable when set.'
         type: string
         required: false
         default: ''
-      grouped:
-        description: 'Set when the calling job name already states the suite and PHP version, so this workflow leaves them out instead of repeating them inside the group.'
-        type: boolean
-        required: false
-        default: false
 
 permissions:
   contents: read
 
 jobs:
   functional:
-    # When the caller wraps this workflow, its own name is not surfaced in the run
-    # view, so this name has to carry everything. When the caller fans out, its job
-    # name becomes the group header and already states the suite and PHP version,
-    # so repeating them here reads as noise. `grouped` picks between the two.
-    #
-    # Written as `!grouped && <prefix> || ''` rather than `grouped && '' || <prefix>`
-    # on purpose: an empty string is falsy, so the latter would fall through to the
-    # prefix in both cases.
-    #
-    # The database version is spelled out because "MySQL" alone rendered the
-    # mysql-8.0 and mysql-8.4 legs identically.
-    name: ${{ !inputs.grouped && format('Behat | PHP {0} | ', inputs.php) || '' }}WP ${{ inputs.wp }} | ${{ inputs.dbtype == 'sqlite' && 'SQLite' || inputs.mysql || 'MySQL' }}${{ inputs.object_cache == 'sqlite' && ' (Obj Cache)' || '' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
+    # This name has to stand on its own. The run view labels a nested job with its
+    # own name only; the calling job's name is not surfaced at this depth, so
+    # anything omitted here is not shown anywhere. The database version is spelled
+    # out because "MySQL" alone rendered the mysql-8.0 and mysql-8.4 legs
+    # identically.
+    name: Behat | PHP ${{ inputs.php }} | WP ${{ inputs.wp }} | ${{ inputs.dbtype == 'sqlite' && 'SQLite' || inputs.mysql || 'MySQL' }}${{ inputs.object_cache == 'sqlite' && ' (Obj Cache)' || '' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
     # Repositories with a heavy Behat suite can point the default Linux legs at a
     # larger runner by setting the `RUNNERS_NAME` repository variable, without
     # having to fork this workflow. Explicit macOS/Windows legs are unaffected.
-    runs-on: ${{ inputs.os || vars.RUNNERS_NAME || 'ubuntu-24.04' }}
+    runs-on: ${{ inputs.os || vars.RUNNERS_NAME || 'ubuntu-22.04' }}
 
     continue-on-error: ${{ inputs.dbtype == 'mariadb' || inputs.php == 'nightly' || startsWith( inputs.os, 'windows' ) || startsWith( inputs.os, 'macos' ) }}
 
@@ -107,7 +96,7 @@ jobs:
       # image drops it.
       - name: Install Ghostscript
         # Keyed on the actual runner rather than the `os` input: an empty input no
-        # longer implies the default image now that RUNNERS_NAME can select it.
+        # longer implies ubuntu-22.04 now that RUNNERS_NAME can select the image.
         if: ${{ runner.os == 'Linux' }}
         run: |
           if command -v gs > /dev/null 2>&1; then
@@ -142,22 +131,16 @@ jobs:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Change ImageMagick policy to allow pdf->png conversion.
-        # Keyed on the actual runner rather than the `os` input, and matched by glob
-        # rather than a hardcoded ImageMagick-6 path, so this keeps working if an
-        # image ships ImageMagick 7. `sed -i` on a missing file exits non-zero and
-        # would fail the leg.
+        # Keyed on the actual runner rather than the `os` input, and tolerant of
+        # images that ship a different ImageMagick layout — `sed -i` on a missing
+        # file exits non-zero and would fail the leg.
         if: ${{ runner.os == 'Linux' }}
         run: |
-          shopt -s nullglob
-          POLICIES=(/etc/ImageMagick-*/policy.xml)
-          if [ ${#POLICIES[@]} -eq 0 ]; then
-            echo 'No ImageMagick policy file found; nothing to relax.'
-            exit 0
+          if [ -f /etc/ImageMagick-6/policy.xml ]; then
+            sudo sed -i 's/^.*policy.*coder.*none.*PDF.*//' /etc/ImageMagick-6/policy.xml
+          else
+            echo 'No ImageMagick 6 policy file found; nothing to relax.'
           fi
-          for policy in "${POLICIES[@]}"; do
-            echo "Relaxing the PDF coder policy in ${policy}."
-            sudo sed -i 's/^.*policy.*coder.*none.*PDF.*//' "$policy"
-          done
 
       # WP-CLI packages do not commit a lock file, so `composer update` resolves
       # dependencies on every run while the cache key stays pinned to composer.json.

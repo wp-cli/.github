@@ -13,63 +13,6 @@ on:
 permissions:
   contents: read
 
-# Lives here rather than in the called workflow, because the fan-out below is
-# owned by this file.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
-  cancel-in-progress: true
-
-# This repository uses the fanned-out form as the reference implementation for
-# the rest of the organisation, and refers to the workflows by local path so that
-# a pull request here exercises its own changes rather than whatever is on main.
-# Packages adopting this shape use `wp-cli/.github/.github/workflows/...@main`.
-# See the README for what this buys and what it costs.
 jobs:
-  prepare:
-    name: Prepare test matrices
-    uses: ./.github/workflows/reusable-prepare-matrix.yml
-
-  unit:
-    needs: prepare
-    if: ${{ needs.prepare.outputs.unit != '' }}
-    # A matrix only becomes a collapsible group in the run view when it sits on a
-    # job declared in the workflow the run belongs to, which is why this fan-out
-    # is here and not one level down.
-    #
-    # The run view groups legs whose calling job name is identical, so this name
-    # must vary by the dimension being grouped on and collide across every other.
-    # A name that does not vary with the matrix at all does not produce one group;
-    # GitHub appends the matrix combination to disambiguate it, giving one group
-    # per leg labelled "Unit (8.5, latest, mysql-8.0)".
-    name: Unit | PHP ${{ matrix.php }}
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.prepare.outputs.unit) }}
-    uses: ./.github/workflows/reusable-unit.yml
-    secrets: inherit
-    with:
-      php: ${{ matrix.php }}
-      coverage: ${{ matrix.coverage == true }}
-      os: ${{ matrix.os || '' }}
-      # The job name above already states the suite and PHP version.
-      grouped: true
-
-  functional:
-    needs: prepare
-    if: ${{ needs.prepare.outputs.functional != '' }}
-    name: Behat | PHP ${{ matrix.php }}
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.prepare.outputs.functional) }}
-    uses: ./.github/workflows/reusable-functional.yml
-    secrets: inherit
-    with:
-      php: ${{ matrix.php }}
-      wp: ${{ matrix.wp }}
-      dbtype: ${{ matrix.dbtype || 'mysql' }}
-      mysql: ${{ matrix.mysql || '' }}
-      object_cache: ${{ matrix.object_cache }}
-      coverage: ${{ matrix.coverage == true }}
-      os: ${{ matrix.os || '' }}
-      # The job name above already states the suite and PHP version.
-      grouped: true
+  test:
+    uses: wp-cli/.github/.github/workflows/reusable-testing.yml@main
