@@ -34,17 +34,33 @@ jobs:
       response: ${{ steps.ai-triage.outputs.response }}
       labels: ${{ steps.get-labels.outputs.result }}
     steps:
+      # Two things here are load-bearing, and both fail silently.
+      #
+      # `github.paginate`, because a bare `listLabelsForRepo` returns one page
+      # and these repositories carry several hundred `command:*` labels. The
+      # label an item needs is usually past the first 100, and the model does
+      # not report a label it was never offered - it picks the closest one it
+      # can see, which is a different command's label.
+      #
+      # `result-encoding: string`, because the default of `json` wraps the
+      # returned string in double quotes. Those quotes survive into the apply
+      # job's `split(',')` and stick to the first and last label, so the two
+      # ends of the list can never match the allowlist.
       - name: Get available labels
         id: get-labels
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
+          result-encoding: string
           script: |
-            const labels = await github.rest.issues.listLabelsForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 100
-            });
-            const labelNames = labels.data.map(label => label.name);
+            const labels = await github.paginate(
+              github.rest.issues.listLabelsForRepo,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100
+              }
+            );
+            const labelNames = labels.map(label => label.name);
             return labelNames.join(', ');
 
       # The Copilot CLI is not preinstalled on GitHub-hosted runners, and
@@ -313,17 +329,33 @@ jobs:
       response: ${{ steps.ai-triage.outputs.response }}
       labels: ${{ steps.get-labels.outputs.result }}
     steps:
+      # Two things here are load-bearing, and both fail silently.
+      #
+      # `github.paginate`, because a bare `listLabelsForRepo` returns one page
+      # and these repositories carry several hundred `command:*` labels. The
+      # label an item needs is usually past the first 100, and the model does
+      # not report a label it was never offered - it picks the closest one it
+      # can see, which is a different command's label.
+      #
+      # `result-encoding: string`, because the default of `json` wraps the
+      # returned string in double quotes. Those quotes survive into the apply
+      # job's `split(',')` and stick to the first and last label, so the two
+      # ends of the list can never match the allowlist.
       - name: Get available labels
         id: get-labels
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
+          result-encoding: string
           script: |
-            const labels = await github.rest.issues.listLabelsForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 100
-            });
-            const labelNames = labels.data.map(label => label.name);
+            const labels = await github.paginate(
+              github.rest.issues.listLabelsForRepo,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100
+              }
+            );
+            const labelNames = labels.map(label => label.name);
             return labelNames.join(', ');
 
       - name: Get item details
