@@ -98,6 +98,7 @@ jobs:
         # Keyed on the actual runner rather than the `os` input: an empty input no
         # longer implies ubuntu-22.04 now that RUNNERS_NAME can select the image.
         if: ${{ runner.os == 'Linux' }}
+        timeout-minutes: 10
         run: |
           if command -v gs > /dev/null 2>&1; then
             echo "Ghostscript $(gs --version) is already installed; skipping."
