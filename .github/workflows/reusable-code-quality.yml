@@ -153,12 +153,16 @@ jobs:
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
 
+      - name: Check existence of vendor/bin/run-gherkin-lint-tests file
+        id: check_linter_file
+        run: echo "files_exists=$(test -f vendor/bin/run-gherkin-lint-tests && composer run-script --list 2>/dev/null | grep -q 'lint-gherkin' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
       # The ruleset, the pinned linter version and the invocation all live in
       # wp-cli-tests, so that contributors can run the identical check locally
       # with `composer lint-gherkin`. It is a no-op in a package that has no
       # feature files.
       - name: Run linter
-        if: steps.check_composer_file.outputs.files_exists == 'true'
+        if: steps.check_linter_file.outputs.files_exists == 'true'
         run: composer lint-gherkin
 
   lint-spellcheck:
