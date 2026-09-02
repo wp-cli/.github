@@ -48,7 +48,7 @@ jobs:
       contents: read
     steps:
       - name: Sync files
-        uses: adrianjost/files-sync-action@55d577a25b7106ebc3001353d981ecf8b0150df4 # v2.1.0
+        uses: adrianjost/files-sync-action@d8c069738e98909c0babc037847f85933d5860ea # v2.1.1
         with:
           # Patterns are regexes matched against repo-relative paths, so the
           # dots are escaped to stop them matching any character.
@@ -125,7 +125,7 @@ jobs:
       contents: read
     steps:
       - name: Sync files
-        uses: adrianjost/files-sync-action@55d577a25b7106ebc3001353d981ecf8b0150df4 # v2.1.0
+        uses: adrianjost/files-sync-action@d8c069738e98909c0babc037847f85933d5860ea # v2.1.1
         with:
           FILE_PATTERNS: |
             ^\.github/dependabot\.yml
