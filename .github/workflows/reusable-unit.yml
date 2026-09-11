@@ -10,24 +10,31 @@ on:
         required: false
         default: false
       os:
-        description: 'Runner to use. Defaults to ubuntu-22.04, or the RUNNERS_NAME repository variable when set.'
+        description: 'Runner to use. Defaults to ubuntu-24.04, or the RUNNERS_NAME repository variable when set.'
         type: string
         required: false
         default: ''
+      grouped:
+        description: 'Set when the calling job name already states the suite and PHP version, so this workflow leaves them out instead of repeating them inside the group.'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   unit:
-    # This name has to stand on its own. The run view labels a nested job with its
-    # own name only; the calling job's name is not surfaced at this depth, so
-    # anything omitted here is not shown anywhere.
-    name: Unit | PHP ${{ inputs.php }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
+    # See the note on the equivalent name in reusable-functional.yml: `grouped`
+    # picks between a name that stands on its own and one that sits inside a group
+    # header which already states the suite and PHP version. A grouped unit leg is
+    # distinguished only by its runner and whether it collects coverage, so those
+    # suffixes carry the whole name.
+    name: ${{ !inputs.grouped && format('Unit | PHP {0}', inputs.php) || 'PHPUnit' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
     # Repositories can point the default Linux legs at a larger runner by setting
     # the `RUNNERS_NAME` repository variable, without having to fork this workflow.
     # Explicit macOS/Windows legs are unaffected.
-    runs-on: ${{ inputs.os || vars.RUNNERS_NAME || 'ubuntu-22.04' }}
+    runs-on: ${{ inputs.os || vars.RUNNERS_NAME || 'ubuntu-24.04' }}
     continue-on-error: ${{ inputs.php == 'nightly' }}
     timeout-minutes: ${{ inputs.coverage && 30 || 15 }}
 
