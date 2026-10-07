@@ -48,6 +48,7 @@ jobs:
       # ends of the list can never match the allowlist.
       - name: Get available labels
         id: get-labels
+        background: true
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           result-encoding: string
@@ -63,6 +64,9 @@ jobs:
             const labelNames = labels.map(label => label.name);
             return labelNames.join(', ');
 
+      # The lookups above run in the background while Node and the Copilot CLI
+      # are installed below; they are waited for before their outputs are used.
+      #
       # The Copilot CLI is not preinstalled on GitHub-hosted runners, and
       # `actions/ai-inference` v3 only shells out to it - it never installs it.
       - name: Set up Node.js
@@ -78,6 +82,9 @@ jobs:
       # a release is compromised.
       - name: Install Copilot CLI
         run: npm install -g @github/copilot
+
+      - name: Wait for the GitHub API lookups
+        wait-all:
 
       - name: Analyze with AI
         id: ai-triage
@@ -343,6 +350,7 @@ jobs:
       # ends of the list can never match the allowlist.
       - name: Get available labels
         id: get-labels
+        background: true
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           result-encoding: string
@@ -360,6 +368,7 @@ jobs:
 
       - name: Get item details
         id: get-item
+        background: true
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           # This job only ever runs on `workflow_dispatch`, and that payload
@@ -387,6 +396,9 @@ jobs:
               type: itemType
             };
 
+      # The lookups above run in the background while Node and the Copilot CLI
+      # are installed below; they are waited for before their outputs are used.
+      #
       # The Copilot CLI is not preinstalled on GitHub-hosted runners, and
       # `actions/ai-inference` v3 only shells out to it - it never installs it.
       - name: Set up Node.js
@@ -402,6 +414,9 @@ jobs:
       # a release is compromised.
       - name: Install Copilot CLI
         run: npm install -g @github/copilot
+
+      - name: Wait for the GitHub API lookups
+        wait-all:
 
       - name: Analyze with AI
         id: ai-triage

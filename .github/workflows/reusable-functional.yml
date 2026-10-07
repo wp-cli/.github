@@ -90,6 +90,45 @@ jobs:
           persist-credentials: false
           show-progress: ${{ runner.debug == '1' && 'true' || 'false' }}
 
+      # MySQL 8.4 requires explicit loading of mysql_native_password plugin
+      - name: Determine MySQL authentication configuration
+        id: mysql-config
+        if: ${{ inputs.dbtype != 'sqlite' && inputs.mysql == 'mysql-8.4' }}
+        run: |
+          echo "auth-config<<EOF" >> $GITHUB_OUTPUT
+          echo "mysql_native_password=ON" >> $GITHUB_OUTPUT
+          echo "authentication_policy=mysql_native_password," >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # Downloading and starting the database server is the slowest part of the
+      # setup, and nothing needs it until the test database is prepared. Run it
+      # in the background alongside the PHP and Composer setup below, and wait
+      # for it right before it is first used. The action only downloads its own
+      # binaries, so it cannot contend with apt, Homebrew or Chocolatey.
+      - name: Setup MySQL Server
+        id: setup-mysql
+        if: ${{ inputs.dbtype != 'sqlite' }}
+        background: true
+        uses: shogo82148/actions-setup-mysql@334a29f22d90428932f75b11e0d5fcc00bb6b4f4 # v1
+        with:
+          mysql-version: ${{ inputs.mysql }}
+          auto-start: true
+          root-password: ${{ env.WP_CLI_TEST_DBROOTPASS }}
+          user: ${{ env.WP_CLI_TEST_DBUSER}}
+          password: ${{ env.WP_CLI_TEST_DBPASS}}
+          # Fall back to legacy configuration for MySQL 5.6, 5.7, 8.0 and MariaDB.
+          my-cnf: |
+            ${{ steps.mysql-config.outputs.auth-config || 'default_authentication_plugin=mysql_native_password' }}
+            ${{ inputs.dbtype == 'mariadb' && '[client]' || '' }}
+            ${{ inputs.dbtype == 'mariadb' && 'disable-ssl-verify-server-cert' || '' }}
+
+      # Chocolatey is slow and these packages are only needed by the Behat run
+      # itself, so let it install them while PHP and Composer are set up.
+      - name: Install dependencies (Windows)
+        if: ${{ startsWith(inputs.os, 'windows') }}
+        background: true
+        run: choco install sqlite ghostscript --yes
+
       # Ghostscript ships with the GitHub-hosted images, so the `apt-get update`
       # this used to run unconditionally cost every Behat leg ~25s for a package
       # that was already there. Keep the install as a fallback in case a future
@@ -106,10 +145,6 @@ jobs:
           fi
           sudo apt-get update
           sudo apt-get install ghostscript -y
-
-      - name: Install dependencies (Windows)
-        if: ${{ startsWith(inputs.os, 'windows') }}
-        run: choco install sqlite ghostscript --yes
 
       - name: Install dependencies (macOS)
         if: ${{ startsWith(inputs.os, 'macos') }}
@@ -160,31 +195,11 @@ jobs:
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
 
-      # MySQL 8.4 requires explicit loading of mysql_native_password plugin
-      - name: Determine MySQL authentication configuration
-        id: mysql-config
-        if: ${{ inputs.dbtype != 'sqlite' && inputs.mysql == 'mysql-8.4' }}
-        run: |
-          echo "auth-config<<EOF" >> $GITHUB_OUTPUT
-          echo "mysql_native_password=ON" >> $GITHUB_OUTPUT
-          echo "authentication_policy=mysql_native_password," >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Setup MySQL Server
-        id: setup-mysql
-        if: ${{ inputs.dbtype != 'sqlite' }}
-        uses: shogo82148/actions-setup-mysql@334a29f22d90428932f75b11e0d5fcc00bb6b4f4 # v1
-        with:
-          mysql-version: ${{ inputs.mysql }}
-          auto-start: true
-          root-password: ${{ env.WP_CLI_TEST_DBROOTPASS }}
-          user: ${{ env.WP_CLI_TEST_DBUSER}}
-          password: ${{ env.WP_CLI_TEST_DBPASS}}
-          # Fall back to legacy configuration for MySQL 5.6, 5.7, 8.0 and MariaDB.
-          my-cnf: |
-            ${{ steps.mysql-config.outputs.auth-config || 'default_authentication_plugin=mysql_native_password' }}
-            ${{ inputs.dbtype == 'mariadb' && '[client]' || '' }}
-            ${{ inputs.dbtype == 'mariadb' && 'disable-ssl-verify-server-cert' || '' }}
+      # Waits for the database server and the Windows dependencies. `wait-all`
+      # rather than `wait: setup-mysql`, as either background step may have been
+      # skipped by its condition. A failure in either fails the job here.
+      - name: Wait for background setup steps
+        wait-all:
 
       - name: Remove system MySQL binary
         if: ${{ inputs.dbtype != 'sqlite' && !startsWith(inputs.os, 'windows') && !startsWith(inputs.os, 'macos') }}

@@ -121,7 +121,10 @@ jobs:
           persist-credentials: false
           show-progress: ${{ runner.debug == '1' && 'true' || 'false' }}
 
+      # Node is only needed by the linter itself, so set it up while PHP and the
+      # Composer dependencies are installed.
       - name: Setup node
+        background: true
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 'lts/*'
@@ -152,6 +155,9 @@ jobs:
           custom-cache-suffix: ${{ steps.composer-cache-suffix.outputs.value }}
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
+
+      - name: Wait for Node to be set up
+        wait-all:
 
       - name: Check existence of vendor/bin/run-gherkin-lint-tests file
         id: check_linter_file
