@@ -59,6 +59,15 @@ jobs:
         shell: bash
         run: echo "value=$(date -u +%Y-%W)" >> "$GITHUB_OUTPUT"
 
+      # roave/security-advisories can't install on PHP < 8.2 (Roave/SecurityAdvisories#155).
+      # Composer's own `policy.advisories.block` still rejects vulnerable packages.
+      - name: Drop roave/security-advisories on PHP < 8.2
+        shell: bash
+        run: |
+          if php -r 'exit(PHP_VERSION_ID < 80200 && isset(json_decode(file_get_contents("composer.json"), true)["require-dev"]["roave/security-advisories"]) ? 0 : 1);'; then
+            composer remove --dev --no-update --no-interaction roave/security-advisories
+          fi
+
       - name: Install Composer dependencies & cache dependencies
         uses: "ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda" # 4.0.0
         with:
