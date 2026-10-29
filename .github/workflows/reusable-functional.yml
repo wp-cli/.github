@@ -165,6 +165,8 @@ jobs:
           tools: composer
         env:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Windows runners don't pick up patched PHP builds on their own (shivammathur/setup-php#1139).
+          update: ${{ runner.os == 'Windows' }}
 
       - name: Change ImageMagick policy to allow pdf->png conversion.
         # Keyed on the actual runner rather than the `os` input, and tolerant of

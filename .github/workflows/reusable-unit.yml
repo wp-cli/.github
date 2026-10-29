@@ -48,6 +48,8 @@ jobs:
           tools: composer,cs2pr
         env:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Windows runners don't pick up patched PHP builds on their own (shivammathur/setup-php#1139).
+          update: ${{ runner.os == 'Windows' }}
 
       # WP-CLI packages do not commit a lock file, so `composer update` resolves
       # dependencies on every run while the cache key stays pinned to composer.json.
