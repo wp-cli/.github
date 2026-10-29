@@ -165,6 +165,8 @@ jobs:
           tools: composer
         env:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Windows runners don't pick up patched PHP builds on their own (shivammathur/setup-php#1139).
+          update: ${{ runner.os == 'Windows' }}
 
       - name: Change ImageMagick policy to allow pdf->png conversion.
         # Keyed on the actual runner rather than the `os` input, and tolerant of
@@ -187,6 +189,30 @@ jobs:
         id: composer-cache-suffix
         shell: bash
         run: echo "value=$(date -u +%Y-%W)" >> "$GITHUB_OUTPUT"
+
+      # roave/security-advisories also conflicts with PHP releases that have known
+      # advisories, so it can't install on those (Roave/SecurityAdvisories#155).
+      # Drop it only when it conflicts with the PHP version in use. setup-php ships
+      # builds with security fixes backported, even for EOL versions, so this is
+      # safe on CI (shivammathur/setup-php#1139).
+      - name: Drop roave/security-advisories if it conflicts with this PHP version
+        shell: bash
+        run: |
+          php -r 'exit(isset(json_decode(file_get_contents("composer.json"), true)["require-dev"]["roave/security-advisories"]) ? 0 : 1);' || exit 0
+          export CONFLICT="$(composer show --available --format=json roave/security-advisories dev-latest | php -r 'echo json_decode(stream_get_contents(STDIN), true)["conflicts"]["php"] ?? "";')"
+          echo "roave/security-advisories conflicts with php ${CONFLICT:-(none)}"
+          if php -r '
+            foreach (preg_split("/\s*\|\|?\s*/", getenv("CONFLICT"), -1, PREG_SPLIT_NO_EMPTY) as $range) {
+              $hit = true;
+              foreach (preg_split("/\s*,\s*|\s+/", $range) as $c) {
+                preg_match("/^(<=|>=|<|>|==|=|!=)?v?(.+)$/", $c, $m);
+                $hit = $hit && version_compare(PHP_VERSION, $m[2], $m[1] ?: "==");
+              }
+              if ($hit) exit(0);
+            }
+            exit(1);'; then
+            composer remove --dev --no-update --no-interaction roave/security-advisories
+          fi
 
       - name: Install Composer dependencies & cache dependencies
         uses: "ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda" # 4.0.0
