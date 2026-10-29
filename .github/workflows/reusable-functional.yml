@@ -188,13 +188,25 @@ jobs:
         shell: bash
         run: echo "value=$(date -u +%Y-%W)" >> "$GITHUB_OUTPUT"
 
-      # roave/security-advisories conflicts with any PHP release that has known advisories,
-      # which includes most CI versions (Roave/SecurityAdvisories#155). Composer's own
-      # `policy.advisories.block` still rejects vulnerable packages.
-      - name: Drop roave/security-advisories
+      # roave/security-advisories also conflicts with PHP releases that have known
+      # advisories, so it can't install on those (Roave/SecurityAdvisories#155).
+      # Drop it only when it conflicts with the PHP version in use.
+      - name: Drop roave/security-advisories if it conflicts with this PHP version
         shell: bash
         run: |
-          if php -r 'exit(isset(json_decode(file_get_contents("composer.json"), true)["require-dev"]["roave/security-advisories"]) ? 0 : 1);'; then
+          php -r 'exit(isset(json_decode(file_get_contents("composer.json"), true)["require-dev"]["roave/security-advisories"]) ? 0 : 1);' || exit 0
+          export CONFLICT="$(composer show --available --format=json roave/security-advisories dev-latest | php -r 'echo json_decode(stream_get_contents(STDIN), true)["conflicts"]["php"] ?? "";')"
+          echo "roave/security-advisories conflicts with php ${CONFLICT:-(none)}"
+          if php -r '
+            foreach (preg_split("/\s*\|\|?\s*/", getenv("CONFLICT"), -1, PREG_SPLIT_NO_EMPTY) as $range) {
+              $hit = true;
+              foreach (preg_split("/\s*,\s*|\s+/", $range) as $c) {
+                preg_match("/^(<=|>=|<|>|==|=|!=)?v?(.+)$/", $c, $m);
+                $hit = $hit && version_compare(PHP_VERSION, $m[2], $m[1] ?: "==");
+              }
+              if ($hit) exit(0);
+            }
+            exit(1);'; then
             composer remove --dev --no-update --no-interaction roave/security-advisories
           fi
 
