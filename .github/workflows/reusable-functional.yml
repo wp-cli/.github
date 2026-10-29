@@ -190,7 +190,9 @@ jobs:
 
       # roave/security-advisories also conflicts with PHP releases that have known
       # advisories, so it can't install on those (Roave/SecurityAdvisories#155).
-      # Drop it only when it conflicts with the PHP version in use.
+      # Drop it only when it conflicts with the PHP version in use. setup-php ships
+      # builds with security fixes backported, even for EOL versions, so this is
+      # safe on CI (shivammathur/setup-php#1139).
       - name: Drop roave/security-advisories if it conflicts with this PHP version
         shell: bash
         run: |
