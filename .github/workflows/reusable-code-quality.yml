@@ -190,6 +190,47 @@ jobs:
         if: steps.check_files.outputs.files_exists == 'true'
         uses: crate-ci/typos@7f9d0819ca1c008ade73f4b41fa9d258d48f605b # v1.51.1
 
+  composer-audit:
+    name: Audit locked dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Spreads the nightly runs of all repositories over 20 minutes, so they
+      # don't all query Packagist at the same moment.
+      - name: Wait a random delay
+        if: github.event_name == 'schedule'
+        run: sleep $(( RANDOM % 1200 ))
+
+      - name: Check out source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          show-progress: ${{ runner.debug == '1' && 'true' || 'false' }}
+
+      # Composer refuses versions with known security advisories when it
+      # resolves dependencies, but not when it installs from a committed lock
+      # file. This catches advisories published after a dependency was locked.
+      # Repositories without a lock file resolve fresh on every run, so they are
+      # covered by that blocking already.
+      - name: Check existence of composer.lock file
+        id: check_files
+        run: echo "files_exists=$(test -f composer.lock && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up PHP environment
+        if: steps.check_files.outputs.files_exists == 'true'
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
+        with:
+          php-version: 'latest'
+          tools: composer
+          coverage: none
+        env:
+          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Abandoned packages are reported without failing the job.
+      - name: Audit composer.lock
+        if: steps.check_files.outputs.files_exists == 'true'
+        run: composer audit --locked --abandoned=report --no-interaction
+
   phpcs:
     name: PHPCS
     runs-on: ubuntu-latest
