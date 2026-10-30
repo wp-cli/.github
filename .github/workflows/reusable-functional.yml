@@ -117,8 +117,13 @@ jobs:
           user: ${{ env.WP_CLI_TEST_DBUSER}}
           password: ${{ env.WP_CLI_TEST_DBPASS}}
           # Fall back to legacy configuration for MySQL 5.6, 5.7, 8.0 and MariaDB.
+          # The test database is thrown away with the runner, so there is no need
+          # to wait for every write to reach the disk.
           my-cnf: |
             ${{ steps.mysql-config.outputs.auth-config || 'default_authentication_plugin=mysql_native_password' }}
+            innodb_flush_log_at_trx_commit=0
+            sync_binlog=0
+            innodb_doublewrite=OFF
             ${{ inputs.dbtype == 'mariadb' && '[client]' || '' }}
             ${{ inputs.dbtype == 'mariadb' && 'disable-ssl-verify-server-cert' || '' }}
 
