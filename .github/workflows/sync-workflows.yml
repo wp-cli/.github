@@ -67,6 +67,7 @@ jobs:
             wp-cli/ai-command
             wp-cli/ability-command
             wp-cli/admin-command
+            wp-cli/batch-command
             wp-cli/block-command
             wp-cli/cache-command
             wp-cli/checksum-command
@@ -134,6 +135,7 @@ jobs:
             wp-cli/ability-command
             wp-cli/admin-command
             wp-cli/automated-tests
+            wp-cli/batch-command
             wp-cli/block-command
             wp-cli/cache-command
             wp-cli/checksum-command
