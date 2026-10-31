@@ -226,6 +226,11 @@ jobs:
           WP_CLI_TEST_DBSOCKET: '${{ steps.setup-mysql.outputs.base-dir }}/tmp/mysql.sock'
           WP_CLI_TEST_COVERAGE: ${{ inputs.coverage }}
           BEHAT_ARGS: ${{ format( '{0}', runner.debug && '--format=pretty' ) }}
+          # Spread the scenarios over parallel workers, each in its own throwaway containers.
+          # Where Docker cannot be used, such as on Windows and macOS or when collecting code
+          # coverage, wp-cli/wp-cli-tests falls back on its own. Older versions ignore these.
+          WP_CLI_TEST_PARALLEL: 4
+          WP_CLI_TEST_DOCKER: 1
         run: |
           composer behat -- $BEHAT_ARGS || composer behat-rerun -- $BEHAT_ARGS
 
