@@ -230,7 +230,7 @@ jobs:
           # Where Docker cannot be used, such as on Windows and macOS or when collecting code
           # coverage, wp-cli/wp-cli-tests falls back on its own. Older versions ignore these.
           WP_CLI_TEST_PARALLEL: 4
-          WP_CLI_TEST_DOCKER: 1
+          WP_CLI_TEST_DOCKER: auto
         run: |
           composer behat -- $BEHAT_ARGS || composer behat-rerun -- $BEHAT_ARGS
 
