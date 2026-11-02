@@ -22,7 +22,7 @@ on:
         description: 'Number of runners to split the Behat tests with code coverage across.'
         type: number
         required: false
-        default: 3
+        default: 4
       matrix:
         description: 'Additional matrix entries to include or exclude.'
         type: string
