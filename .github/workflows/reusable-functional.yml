@@ -122,21 +122,28 @@ jobs:
             ${{ inputs.dbtype == 'mariadb' && '[client]' || '' }}
             ${{ inputs.dbtype == 'mariadb' && 'disable-ssl-verify-server-cert' || '' }}
 
+      # Only scenarios tagged `@require-bin-gs` need Ghostscript, for Imagick to
+      # render PDFs. The runner images don't ship it, and installing it costs a
+      # Linux leg 15-30s, so skip it for packages that have no such scenario.
+      - name: Check whether Ghostscript is needed
+        id: ghostscript
+        shell: bash
+        run: |
+          if grep -rqs --include='*.feature' '@require-bin-gs' features; then
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       # Chocolatey is slow and these packages are only needed by the Behat run
       # itself, so let it install them while PHP and Composer are set up.
       - name: Install dependencies (Windows)
         if: ${{ startsWith(inputs.os, 'windows') }}
         background: true
-        run: choco install sqlite ghostscript --yes
+        run: choco install sqlite ${{ steps.ghostscript.outputs.needed == 'true' && 'ghostscript' || '' }} --yes
 
-      # Ghostscript ships with the GitHub-hosted images, so the `apt-get update`
-      # this used to run unconditionally cost every Behat leg ~25s for a package
-      # that was already there. Keep the install as a fallback in case a future
-      # image drops it.
       - name: Install Ghostscript
         # Keyed on the actual runner rather than the `os` input: an empty input no
         # longer implies ubuntu-22.04 now that RUNNERS_NAME can select the image.
-        if: ${{ runner.os == 'Linux' }}
+        if: ${{ runner.os == 'Linux' && steps.ghostscript.outputs.needed == 'true' }}
         timeout-minutes: 10
         run: |
           if command -v gs > /dev/null 2>&1; then
@@ -146,8 +153,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install ghostscript -y
 
-      - name: Install dependencies (macOS)
-        if: ${{ startsWith(inputs.os, 'macos') }}
+      - name: Install Ghostscript (macOS)
+        if: ${{ startsWith(inputs.os, 'macos') && steps.ghostscript.outputs.needed == 'true' }}
         run: |
           if command -v gs > /dev/null 2>&1; then
             echo "Ghostscript $(gs --version) is already installed; skipping."
