@@ -18,6 +18,11 @@ on:
         type: boolean
         required: false
         default: true
+      coverage-shards:
+        description: 'Maximum number of runners to split the Behat tests with code coverage across. Packages get one runner per 50 scenarios, up to this number.'
+        type: number
+        required: false
+        default: 4
       matrix:
         description: 'Additional matrix entries to include or exclude.'
         type: string
@@ -44,6 +49,7 @@ jobs:
     outputs:
       unit: ${{ steps.unit.outputs.matrix }}
       functional: ${{ steps.functional.outputs.matrix }}
+      coverage: ${{ steps.functional.outputs.coverage }}
     steps:
       - name: Check out source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -475,9 +481,11 @@ jobs:
           INPUTS_MINIMUM_PHP: ${{ inputs.minimum-php }}
           INPUTS_MINIMUM_WP: ${{ inputs.minimum-wp }}
           WITH_COVERAGE: ${{ inputs.with-coverage }}
+          COVERAGE_SHARDS: ${{ inputs.coverage-shards }}
+          SCENARIOS_PER_SHARD: 50
         run: |
           if [[ $FILE_EXISTS == 'true' && $DOCS_ONLY != 'true' ]]; then
-            echo "matrix=$(jq -c \
+            MATRIX=$(jq -c \
               --argjson with_coverage_flag "${WITH_COVERAGE}" \
               --arg minimum_php "${INPUTS_MINIMUM_PHP}" \
               --arg minimum_wp "${INPUTS_MINIMUM_WP}" \
@@ -505,9 +513,33 @@ jobs:
                   ).wp |= $minimum_wp
                 )
               )
-              ' <<< "$BASE_MATRIX" )" >> "$GITHUB_OUTPUT"
+              ' <<< "$BASE_MATRIX" )
+
+            # Collecting code coverage makes the Behat tests several times slower, so these
+            # run as a job of their own, split across runners. Every runner spends about a
+            # minute on its setup, so small packages use fewer of them. An entry can set its
+            # own number of shards with "coverage_shards".
+            SCENARIOS=$(find features -name '*.feature' -exec cat {} + 2>/dev/null | grep -cE '^[[:space:]]*Scenario( Outline)?:' || true)
+            SHARDS=$(( (SCENARIOS + SCENARIOS_PER_SHARD - 1) / SCENARIOS_PER_SHARD ))
+            SHARDS=$(( SHARDS < 1 ? 1 : SHARDS > COVERAGE_SHARDS ? COVERAGE_SHARDS : SHARDS ))
+            echo "Splitting the Behat tests with code coverage across ${SHARDS} runners, for ${SCENARIOS} scenarios."
+            COVERAGE=$(jq -c --argjson shards "${SHARDS}" '
+              [
+                .include[] | select(.coverage == true) | . as $entry |
+                ($entry.coverage_shards // $shards) as $total |
+                if $total > 1 then
+                  range(1; $total + 1) | $entry + { shard: "\(.)/\($total)" }
+                else
+                  $entry + { shard: "" }
+                end
+              ]
+              ' <<< "$MATRIX")
+
+            echo "matrix=$(jq -c '.include |= map(select(.coverage != true)) | if (.include | length) > 0 then . else empty end' <<< "$MATRIX")" >> "$GITHUB_OUTPUT"
+            echo "coverage=$(jq -c 'if length > 0 then { include: . } else empty end' <<< "$COVERAGE")" >> "$GITHUB_OUTPUT"
           else
             echo "matrix=" >> "$GITHUB_OUTPUT"
+            echo "coverage=" >> "$GITHUB_OUTPUT"
           fi
 
   unit:
@@ -547,3 +579,61 @@ jobs:
       object_cache: ${{ matrix.object_cache }}
       coverage: ${{ matrix.coverage == true }}
       os: ${{ matrix.os || '' }}
+
+  functional-coverage:
+    needs: prepare
+    if: ${{ needs.prepare.outputs.coverage != '' }}
+    # Static on purpose, see above.
+    name: Behat coverage
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare.outputs.coverage) }}
+    uses: ./.github/workflows/reusable-functional.yml
+    secrets: inherit
+    with:
+      php: ${{ matrix.php }}
+      wp: ${{ matrix.wp }}
+      dbtype: ${{ matrix.dbtype || 'mysql' }}
+      mysql: ${{ matrix.mysql || '' }}
+      object_cache: ${{ matrix.object_cache }}
+      coverage: true
+      coverage-driver: ${{ matrix.coverage_driver || 'pcov' }}
+      shard: ${{ matrix.shard }}
+      parallel: ${{ matrix.parallel || 4 }}
+      os: ${{ matrix.os || '' }}
+
+  # The reports of all shards are uploaded together, so that Codecov receives the coverage
+  # of the Behat tests as one upload however many runners collected it, and never reports
+  # on a part of it. Only when every shard passed, as one that failed has no report.
+  coverage-upload:
+    needs: functional-coverage
+    if: ${{ needs.functional-coverage.result == 'success' }}
+    name: Upload Behat code coverage
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          show-progress: ${{ runner.debug == '1' && 'true' || 'false' }}
+
+      - name: Download the code coverage reports of all shards
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: behat-coverage-*
+          path: build/coverage
+
+      - name: Retrieve list of coverage files
+        id: coverage_files
+        run: |
+          FILES=$(find "$GITHUB_WORKSPACE/build/coverage" -name '*.xml' | sort | paste -s -d "," -)
+          echo "Found $(tr ',' '\n' <<< "$FILES" | grep -c .) coverage reports."
+          echo "files=$FILES" >> "$GITHUB_OUTPUT"
+
+      - name: Upload code coverage report
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: ${{ steps.coverage_files.outputs.files }}
+          flags: feature
+          token: ${{ secrets.CODECOV_TOKEN }}
