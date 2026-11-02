@@ -523,10 +523,24 @@ jobs:
             SHARDS=$(( (SCENARIOS + SCENARIOS_PER_SHARD - 1) / SCENARIOS_PER_SHARD ))
             SHARDS=$(( SHARDS < 1 ? 1 : SHARDS > COVERAGE_SHARDS ? COVERAGE_SHARDS : SHARDS ))
             echo "Splitting the Behat tests with code coverage across ${SHARDS} runners, for ${SCENARIOS} scenarios."
-            COVERAGE=$(jq -c --argjson shards "${SHARDS}" '
+
+            # PCOV needs phpunit/php-code-coverage 9.1 or later, which picks the driver that is
+            # loaded. Older versions, as locked by a package that supports PHP 7.2, only use Xdebug.
+            DRIVER=pcov
+            if [ -f composer.lock ]; then
+              LOCKED=$(jq -r '[.packages[]?, .["packages-dev"][]? | select(.name == "phpunit/php-code-coverage") | .version][0] // empty' composer.lock)
+              LOCKED=${LOCKED#v}
+              if [ -n "${LOCKED}" ] && [ "$(printf '%s\n' "${LOCKED}" 9.1 | sort -V | head -n 1)" != 9.1 ]; then
+                echo "Collecting code coverage with Xdebug, as composer.lock has phpunit/php-code-coverage ${LOCKED}."
+                DRIVER=xdebug
+              fi
+            fi
+
+            COVERAGE=$(jq -c --argjson shards "${SHARDS}" --arg driver "${DRIVER}" '
               [
                 .include[] | select(.coverage == true) | . as $entry |
                 ($entry.coverage_shards // $shards) as $total |
+                ($entry | .coverage_driver //= $driver) as $entry |
                 if $total > 1 then
                   range(1; $total + 1) | $entry + { shard: "\(.)/\($total)" }
                 else
