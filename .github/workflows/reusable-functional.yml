@@ -24,6 +24,21 @@ on:
         type: boolean
         required: false
         default: false
+      coverage-driver:
+        description: 'Code coverage driver, either `pcov` or `xdebug`.'
+        type: string
+        required: false
+        default: 'pcov'
+      shard:
+        description: 'Share of the scenarios to run, as `<index>/<total>`, for example `2/3`. Empty to run all of them.'
+        type: string
+        required: false
+        default: ''
+      parallel:
+        description: 'Number of parallel workers on the runner.'
+        type: number
+        required: false
+        default: 4
       os:
         description: 'Runner to use. Defaults to ubuntu-22.04, or the RUNNERS_NAME repository variable when set.'
         type: string
@@ -40,7 +55,7 @@ jobs:
     # anything omitted here is not shown anywhere. The database version is spelled
     # out because "MySQL" alone rendered the mysql-8.0 and mysql-8.4 legs
     # identically.
-    name: Behat | PHP ${{ inputs.php }} | WP ${{ inputs.wp }} | ${{ inputs.dbtype == 'sqlite' && 'SQLite' || inputs.mysql || 'MySQL' }}${{ inputs.object_cache == 'sqlite' && ' (Obj Cache)' || '' }}${{ inputs.coverage && ' (with coverage)' || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
+    name: Behat | PHP ${{ inputs.php }} | WP ${{ inputs.wp }} | ${{ inputs.dbtype == 'sqlite' && 'SQLite' || inputs.mysql || 'MySQL' }}${{ inputs.object_cache == 'sqlite' && ' (Obj Cache)' || '' }}${{ inputs.coverage && format( ' (with coverage{0})', inputs.shard && format( ', {0}', inputs.shard ) || '' ) || '' }}${{ startsWith( inputs.os, 'windows' ) && ' (Windows)' || '' }}${{ startsWith( inputs.os, 'macos' ) && ' (macOS)' || '' }}
     # Repositories with a heavy Behat suite can point the default Linux legs at a
     # larger runner by setting the `RUNNERS_NAME` repository variable, without
     # having to fork this workflow. Explicit macOS/Windows legs are unaffected.
@@ -166,9 +181,13 @@ jobs:
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # v2
         with:
           php-version: '${{ inputs.php }}'
-          ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
+          # PCOV only instruments the files below pcov.directory. Left unset, it would pick the
+          # working directory of every `wp` process the scenarios run, which is a temporary
+          # WordPress install, and collect nothing. Xdebug instead instruments every file it
+          # loads, all of WordPress included, which makes it several times slower.
+          ini-values: zend.assertions=1, error_reporting=-1, display_errors=On${{ inputs.coverage && inputs.coverage-driver == 'pcov' && format( ', pcov.directory={0}, "pcov.exclude=~/vendor/~"', github.workspace ) || '' }}
           extensions: gd, imagick, mysql, zip, pdo_sqlite, exif, fileinfo
-          coverage: ${{ inputs.coverage && 'xdebug' || 'none' }}
+          coverage: ${{ inputs.coverage && inputs.coverage-driver || 'none' }}
           tools: composer
         env:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -236,23 +255,33 @@ jobs:
           # Spread the scenarios over parallel workers, each in its own throwaway containers.
           # Where Docker cannot be used, such as on Windows and macOS or when collecting code
           # coverage, wp-cli/wp-cli-tests falls back on its own. Older versions ignore these.
-          WP_CLI_TEST_PARALLEL: 4
+          WP_CLI_TEST_PARALLEL: ${{ inputs.parallel }}
+          # The test framework spreads the scenarios over the shards by their expected cost,
+          # the same way on every runner, so that together they run every scenario once.
+          WP_CLI_TEST_SHARD: ${{ inputs.shard }}
           WP_CLI_TEST_DOCKER: auto
         run: |
           composer behat -- $BEHAT_ARGS || composer behat-rerun -- $BEHAT_ARGS
 
-      - name: Retrieve list of coverage files
-        id: coverage_files
+      # The calling workflow uploads the reports of all shards together, once all of them
+      # finished, so that Codecov receives them as one upload and never reports on a part.
+      - name: Name the code coverage report
+        id: coverage_artifact
         if: ${{ inputs.coverage }}
-        run: |
-          FILES=$(find "$GITHUB_WORKSPACE/build/logs" -path '*.*' | paste -s -d "," -)
-          echo "files=$FILES" >> $GITHUB_OUTPUT
+        env:
+          SHARD: ${{ inputs.shard || 'all' }}
+          PHP: ${{ inputs.php }}
+          DRIVER: ${{ inputs.coverage-driver }}
+          PARALLEL: ${{ inputs.parallel }}
+        run: echo "name=behat-coverage-${PHP}-${DRIVER}-p${PARALLEL}-${SHARD//\//-of-}" >> "$GITHUB_OUTPUT"
 
-      - name: Upload code coverage report
+      - name: Keep the code coverage report for the upload
         if: ${{ inputs.coverage }}
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          # Because somehow providing `directory: build/logs` doesn't work for these files
-          files: ${{ steps.coverage_files.outputs.files }}
-          flags: feature
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: ${{ steps.coverage_artifact.outputs.name }}
+          path: build/logs/*.xml
+          if-no-files-found: error
+          retention-days: 1
+          # A re-run of a failed shard replaces the report of its previous attempt.
+          overwrite: true
