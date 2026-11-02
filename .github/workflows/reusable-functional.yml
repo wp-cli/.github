@@ -233,11 +233,31 @@ jobs:
         if: ${{ inputs.dbtype != 'sqlite' && !startsWith(inputs.os, 'windows') && !startsWith(inputs.os, 'macos') }}
         run: sudo rm -f /usr/bin/mysql /usr/bin/mysqldump
 
+      # Versions of wp-cli/wp-cli-tests before the sharding support run every scenario on
+      # every shard. Then only the first shard runs them, so that they run once.
+      - name: Check whether wp-cli/wp-cli-tests can split the scenarios
+        id: shard
+        if: ${{ inputs.shard != '' }}
+        env:
+          SHARD: ${{ inputs.shard }}
+        run: |
+          RUNNER=vendor/wp-cli/wp-cli-tests/bin/run-behat-tests
+          [ -f "$RUNNER" ] || RUNNER=bin/run-behat-tests
+          if [ -f "$RUNNER" ] && grep -q WP_CLI_TEST_SHARD "$RUNNER"; then
+            echo "shard=${SHARD}" >> "$GITHUB_OUTPUT"
+          elif [ "${SHARD%%/*}" = 1 ]; then
+            echo "::warning::This version of wp-cli/wp-cli-tests cannot split the scenarios across runners, so shard ${SHARD} runs all of them."
+          else
+            echo "This version of wp-cli/wp-cli-tests cannot split the scenarios across runners, so shard 1 runs all of them and this one none."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Prepare test database
-        if: ${{ inputs.dbtype != 'sqlite' }}
+        if: ${{ inputs.dbtype != 'sqlite' && steps.shard.outputs.skip != 'true' }}
         run: composer prepare-tests
 
       - name: Check Behat environment
+        if: ${{ steps.shard.outputs.skip != 'true' }}
         env:
           WP_VERSION: '${{ inputs.wp }}'
           WP_CLI_TEST_DBTYPE: ${{ inputs.dbtype || 'mysql' }}
@@ -246,6 +266,7 @@ jobs:
         run: composer behat
 
       - name: Run Behat
+        if: ${{ steps.shard.outputs.skip != 'true' }}
         env:
           WP_VERSION: '${{ inputs.wp }}'
           WP_CLI_TEST_DBTYPE: ${{ inputs.dbtype || 'mysql' }}
@@ -258,7 +279,7 @@ jobs:
           WP_CLI_TEST_PARALLEL: ${{ inputs.parallel }}
           # The test framework spreads the scenarios over the shards by their expected cost,
           # the same way on every runner, so that together they run every scenario once.
-          WP_CLI_TEST_SHARD: ${{ inputs.shard }}
+          WP_CLI_TEST_SHARD: ${{ steps.shard.outputs.shard }}
           WP_CLI_TEST_DOCKER: auto
         run: |
           composer behat -- $BEHAT_ARGS || composer behat-rerun -- $BEHAT_ARGS
@@ -267,7 +288,7 @@ jobs:
       # finished, so that Codecov receives them as one upload and never reports on a part.
       - name: Name the code coverage report
         id: coverage_artifact
-        if: ${{ inputs.coverage }}
+        if: ${{ inputs.coverage && steps.shard.outputs.skip != 'true' }}
         env:
           SHARD: ${{ inputs.shard || 'all' }}
           PHP: ${{ inputs.php }}
@@ -276,7 +297,7 @@ jobs:
         run: echo "name=behat-coverage-${PHP}-${DRIVER}-p${PARALLEL}-${SHARD//\//-of-}" >> "$GITHUB_OUTPUT"
 
       - name: Keep the code coverage report for the upload
-        if: ${{ inputs.coverage }}
+        if: ${{ inputs.coverage && steps.shard.outputs.skip != 'true' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ steps.coverage_artifact.outputs.name }}

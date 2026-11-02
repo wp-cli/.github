@@ -19,7 +19,7 @@ on:
         required: false
         default: true
       coverage-shards:
-        description: 'Number of runners to split the Behat tests with code coverage across.'
+        description: 'Maximum number of runners to split the Behat tests with code coverage across. Packages get one runner per 50 scenarios, up to this number.'
         type: number
         required: false
         default: 4
@@ -482,6 +482,7 @@ jobs:
           INPUTS_MINIMUM_WP: ${{ inputs.minimum-wp }}
           WITH_COVERAGE: ${{ inputs.with-coverage }}
           COVERAGE_SHARDS: ${{ inputs.coverage-shards }}
+          SCENARIOS_PER_SHARD: 50
         run: |
           if [[ $FILE_EXISTS == 'true' && $DOCS_ONLY != 'true' ]]; then
             MATRIX=$(jq -c \
@@ -515,9 +516,14 @@ jobs:
               ' <<< "$BASE_MATRIX" )
 
             # Collecting code coverage makes the Behat tests several times slower, so these
-            # run as a job of their own, split across runners. An entry can set its own
-            # number of shards with "coverage_shards".
-            COVERAGE=$(jq -c --argjson shards "${COVERAGE_SHARDS}" '
+            # run as a job of their own, split across runners. Every runner spends about a
+            # minute on its setup, so small packages use fewer of them. An entry can set its
+            # own number of shards with "coverage_shards".
+            SCENARIOS=$(find features -name '*.feature' -exec cat {} + 2>/dev/null | grep -cE '^[[:space:]]*Scenario( Outline)?:' || true)
+            SHARDS=$(( (SCENARIOS + SCENARIOS_PER_SHARD - 1) / SCENARIOS_PER_SHARD ))
+            SHARDS=$(( SHARDS < 1 ? 1 : SHARDS > COVERAGE_SHARDS ? COVERAGE_SHARDS : SHARDS ))
+            echo "Splitting the Behat tests with code coverage across ${SHARDS} runners, for ${SCENARIOS} scenarios."
+            COVERAGE=$(jq -c --argjson shards "${SHARDS}" '
               [
                 .include[] | select(.coverage == true) | . as $entry |
                 ($entry.coverage_shards // $shards) as $total |
