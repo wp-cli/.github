@@ -115,15 +115,12 @@ jobs:
           echo "authentication_policy=mysql_native_password," >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      # Downloading and starting the database server is the slowest part of the
-      # setup, and nothing needs it until the test database is prepared. Run it
-      # in the background alongside the PHP and Composer setup below, and wait
-      # for it right before it is first used. The action only downloads its own
-      # binaries, so it cannot contend with apt, Homebrew or Chocolatey.
+      # Not run in the background alongside the setup below: the action unpacks
+      # its binaries with the system `tar`, which fails to load libpcre2 while
+      # setup-php or the Ghostscript install upgrade that library with apt.
       - name: Setup MySQL Server
         id: setup-mysql
         if: ${{ inputs.dbtype != 'sqlite' }}
-        background: true
         uses: shogo82148/actions-setup-mysql@13a38f2af408e58a0c80168fc620a63a15357339 # v1
         with:
           mysql-version: ${{ inputs.mysql }}
@@ -223,9 +220,9 @@ jobs:
         env:
           COMPOSER_ROOT_VERSION: dev-${{ github.event.repository.default_branch }}
 
-      # Waits for the database server and the Windows dependencies. `wait-all`
-      # rather than `wait: setup-mysql`, as either background step may have been
-      # skipped by its condition. A failure in either fails the job here.
+      # Waits for the Windows dependencies. `wait-all` rather than a named `wait`,
+      # as the background step may have been skipped by its condition. A failure
+      # there fails the job here.
       - name: Wait for background setup steps
         wait-all:
 
