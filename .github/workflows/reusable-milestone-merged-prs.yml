@@ -64,12 +64,14 @@ jobs:
 
             let milestone;
 
-            const open = versioned( await fetchMilestones( 'open' ) );
+            // Pick and derive from a single snapshot, so that concurrent runs
+            // that both find no open milestone compute the same next title.
+            const all = versioned( await fetchMilestones( 'all' ) );
+            const open = all.filter( ( entry ) => entry.milestone.state === 'open' );
             if ( open.length > 0 ) {
               milestone = open[0].milestone;
               core.info( `Using lowest open milestone ${ milestone.title }.` );
             } else {
-              const all = versioned( await fetchMilestones( 'all' ) );
               if ( all.length === 0 ) {
                 core.notice( 'No open milestone and no versioned milestone to derive one from, skipping.' );
                 return;
