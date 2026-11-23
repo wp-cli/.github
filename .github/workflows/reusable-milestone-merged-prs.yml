@@ -1,0 +1,96 @@
+---
+name: Milestone Merged Pull Requests
+
+'on':
+  workflow_call:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  milestone:
+    name: Add merged pull request to milestone
+    runs-on: ubuntu-latest
+    if: ${{ github.repository_owner == 'wp-cli' && github.event.pull_request.merged == true && github.event.pull_request.milestone == null }}
+    steps:
+      - name: Assign next open milestone
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+
+            // Accepts titles like `2.12.0`, `v2.12.0` and `2.12`.
+            const parse = ( title ) => {
+              const match = /^(v?)(\d+)\.(\d+)(?:\.(\d+))?$/.exec( title.trim() );
+              if ( ! match ) {
+                return null;
+              }
+              return {
+                prefix: match[1],
+                parts: [ Number( match[2] ), Number( match[3] ), Number( match[4] ?? 0 ) ],
+              };
+            };
+
+            const compare = ( a, b ) => {
+              for ( let i = 0; i < 3; i++ ) {
+                if ( a.version.parts[ i ] !== b.version.parts[ i ] ) {
+                  return a.version.parts[ i ] - b.version.parts[ i ];
+                }
+              }
+              return 0;
+            };
+
+            const versioned = ( milestones ) => milestones
+              .map( ( milestone ) => ( { milestone, version: parse( milestone.title ) } ) )
+              .filter( ( entry ) => entry.version !== null )
+              .sort( compare );
+
+            const fetchMilestones = ( state ) => github.paginate( github.rest.issues.listMilestones, {
+              owner,
+              repo,
+              state,
+              per_page: 100,
+            } );
+
+            let milestone;
+
+            const open = versioned( await fetchMilestones( 'open' ) );
+            if ( open.length > 0 ) {
+              milestone = open[0].milestone;
+              core.info( `Using lowest open milestone ${ milestone.title }.` );
+            } else {
+              const all = versioned( await fetchMilestones( 'all' ) );
+              if ( all.length === 0 ) {
+                core.notice( 'No open milestone and no versioned milestone to derive one from, skipping.' );
+                return;
+              }
+
+              const latest = all[ all.length - 1 ].version;
+              const [ major, minor, patch ] = latest.parts;
+              const title = `${ latest.prefix }${ major }.${ minor }.${ patch + 1 }`;
+
+              try {
+                ( { data: milestone } = await github.rest.issues.createMilestone( { owner, repo, title } ) );
+                core.info( `Created milestone ${ title }.` );
+              } catch ( error ) {
+                // Another run may have created it in the meantime.
+                if ( error.status !== 422 ) {
+                  throw error;
+                }
+                milestone = ( await fetchMilestones( 'all' ) ).find( ( m ) => m.title === title );
+                if ( ! milestone ) {
+                  throw error;
+                }
+                core.info( `Milestone ${ title } already exists.` );
+              }
+            }
+
+            await github.rest.issues.update( {
+              owner,
+              repo,
+              issue_number: pr.number,
+              milestone: milestone.number,
+            } );
+            core.info( `Added #${ pr.number } to milestone ${ milestone.title }.` );

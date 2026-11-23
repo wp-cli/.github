@@ -16,6 +16,7 @@ on:
       - '.github/workflows/copilot-setup-steps.yml'
       - '.github/workflows/issue-triage.yml'
       - '.github/workflows/manage-labels.yml'
+      - '.github/workflows/milestone-merged-prs.yml'
       - '.github/workflows/regenerate-readme.yml'
       - '.github/workflows/welcome-new-contributors.yml'
       - '.github/workflows/sync-workflows.yml'
@@ -62,6 +63,7 @@ jobs:
             ^\.github/workflows/issue-triage\.yml
             ^\.github/workflows/check-branch-alias\.yml
             ^\.github/workflows/manage-labels\.yml
+            ^\.github/workflows/milestone-merged-prs\.yml
             ^AGENTS\.md
           TARGET_REPOS: |
             wp-cli/ai-command
