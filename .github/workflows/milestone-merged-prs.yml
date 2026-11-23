@@ -12,12 +12,6 @@ permissions:
   issues: write
   pull-requests: write
 
-# Serialize runs so that two pull requests merged at the same time do not
-# both create the next milestone.
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: false
-
 jobs:
   milestone:
     uses: wp-cli/.github/.github/workflows/reusable-milestone-merged-prs.yml@main

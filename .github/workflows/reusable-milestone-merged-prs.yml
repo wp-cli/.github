@@ -21,6 +21,14 @@ jobs:
             const { owner, repo } = context.repo;
             const pr = context.payload.pull_request;
 
+            // The event payload is a snapshot from the merge, so a milestone
+            // set by hand since then would otherwise be overwritten.
+            const { data: current } = await github.rest.issues.get( { owner, repo, issue_number: pr.number } );
+            if ( current.milestone ) {
+              core.info( `#${ pr.number } already has milestone ${ current.milestone.title }, skipping.` );
+              return;
+            }
+
             // Accepts titles like `2.12.0`, `v2.12.0` and `2.12`.
             const parse = ( title ) => {
               const match = /^(v?)(\d+)\.(\d+)(?:\.(\d+))?$/.exec( title.trim() );
@@ -75,7 +83,8 @@ jobs:
                 ( { data: milestone } = await github.rest.issues.createMilestone( { owner, repo, title } ) );
                 core.info( `Created milestone ${ title }.` );
               } catch ( error ) {
-                // Another run may have created it in the meantime.
+                // A concurrent run for another merged pull request may have
+                // created it in the meantime.
                 if ( error.status !== 422 ) {
                   throw error;
                 }
