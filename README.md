@@ -18,6 +18,7 @@ This repository contains reusable GitHub Actions workflows that are automaticall
 - **Code Quality Checks** (`code-quality.yml`) - Runs linting, PHPCS, PHPStan, and other code quality tools
 - **Regenerate README** (`regenerate-readme.yml`) - Automatically regenerates README.md files from source
 - **Check Branch Alias** (`check-branch-alias.yml`) - Monitors and updates Composer branch-alias configuration
+- **Milestone Merged Pull Requests** (`milestone-merged-prs.yml`) - Adds merged pull requests to the next milestone
 
 #### Branch Alias Checker
 
@@ -30,6 +31,14 @@ The branch alias checker workflow automatically ensures that the Composer `branc
 5. Creates a pull request if an update is needed
 
 For example, if a repository releases `v2.2.6` or `v2.3.0`, the branch-alias stays at `2.x-dev`. Only when releasing `v3.0.0` should it change to `3.x-dev`.
+
+#### Milestone Merged Pull Requests
+
+When a pull request is merged into `main` or `master` and has no milestone yet, this workflow adds it to the next release milestone:
+
+1. If there are open milestones with version titles (e.g. `2.12.1`), it uses the lowest one
+2. Otherwise it creates a new milestone one patch version above the highest existing one (e.g. `2.12.0` → `2.12.1`)
+3. If the repository has no versioned milestones at all, it does nothing
 
 ## Installing
 
